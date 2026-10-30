@@ -1,9 +1,11 @@
 # @stellarsafe/sdk
 
-TypeScript SDK for **StellarSafe**, an open-source treasury and policy engine for
-Stellar. The SDK gives you typed clients for StellarSafe treasury contracts:
-read policies and proposals, prepare and simulate payments, sign with any
-Stellar wallet, and decode contract events.
+TypeScript SDK for **StellarSafe**, an open-source **spending-policy engine**
+for Stellar. Treasuries, DAOs and payroll apps hold funds in a Soroban
+contract that enforces approval thresholds, recipient and token allowlists,
+department spending limits and approval expiry **on-chain**. This SDK lets any
+app, not just the StellarSafe dashboard, read policies, prepare and simulate
+payments, sign with any Stellar wallet and index contract events.
 
 [![CI](https://github.com/stellarsafe-labs/stellarsafe-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/stellarsafe-labs/stellarsafe-sdk/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@stellarsafe/sdk.svg)](https://www.npmjs.com/package/@stellarsafe/sdk)
@@ -11,6 +13,28 @@ Stellar wallet, and decode contract events.
 
 > **Status: pre-1.0, testnet only.** The StellarSafe contracts have not been
 > audited. Do not hold real funds in a StellarSafe treasury until they have.
+
+## Live demo on testnet
+
+A demo treasury deployed with this SDK (`scripts/demo-testnet.ts`):
+
+|                                |                                                                                                                               |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| Treasury                       | [`CCDNZXL2…G2QRR`](https://stellar.expert/explorer/testnet/contract/CCDNZXL2PRPWTN7H6QF7HIRTFZXX73FG3VV7VB4EU2MWG6C2VXYG2QRR) |
+| Policy                         | 1 approval by default, 2 for ≥ 25 XLM; allowlisted vendor only; `ops` limited to 100 XLM per 30 days                          |
+| Deployment (constructor setup) | [tx](https://stellar.expert/explorer/testnet/tx/16644bf61ef89efc0e9fa7a2fa525065a347dde80507c5eae1c2ff498206352e)             |
+| 10 XLM payment, 1 approval     | [executed](https://stellar.expert/explorer/testnet/tx/b4334922d260da9c567e960ae58f16f104c51a628a545126380990a00d7375fe)       |
+| 30 XLM payment, 2 approvals    | [executed](https://stellar.expert/explorer/testnet/tx/0b25f8ea66b0c2e8e08a672195e88c2efc1d3af01588ee5706859fc3c28c8411)       |
+| Proposal #3, 40 XLM            | pending, 1 of 2 approvals                                                                                                     |
+
+Read it yourself:
+
+```sh
+npm run build
+STELLARSAFE_TREASURY_ID=CCDNZXL2PRPWTN7H6QF7HIRTFZXX73FG3VV7VB4EU2MWG6C2VXYG2QRR node examples/read-treasury.ts
+```
+
+Testnet is reset periodically; rerun `node scripts/demo-testnet.ts` to recreate it.
 
 ## Contents
 
