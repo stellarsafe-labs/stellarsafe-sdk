@@ -334,6 +334,19 @@ Everything the SDK throws is a `StellarSafeError` with a stable `code`:
 A `TRANSACTION_TIMEOUT` means the transaction _may still land_: check its
 status by hash before resubmitting.
 
+Use `describeContractError` to get the user-facing description by contract error
+name or numeric code. `CONTRACT_ERROR_DESCRIPTIONS` exposes the complete
+read-only mapping for interfaces that need to display or list every error:
+
+```ts
+import { describeContractError } from "@stellarsafe/sdk";
+
+describeContractError("InsufficientApprovals");
+// "The proposal does not have enough valid approvals."
+describeContractError(11); // the same description
+describeContractError(999); // generic message for a newer contract error
+```
+
 If state changes between simulation and inclusion (for example another
 approver executed first), the transaction fails on-chain. When the RPC
 reports the cause, `err.contractError` holds it:

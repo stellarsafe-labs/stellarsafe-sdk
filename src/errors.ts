@@ -86,7 +86,14 @@ export const ContractErrorCode = {
 /** Name of a contract error, e.g. `"SpendingLimitExceeded"`. */
 export type ContractErrorName = keyof typeof ContractErrorCode;
 
-const CONTRACT_ERROR_MESSAGES: Record<ContractErrorName, string> = {
+/**
+ * Readable descriptions for every contract error defined by the SDK.
+ *
+ * The mapping is frozen so callers can safely share it with user interfaces.
+ */
+export const CONTRACT_ERROR_DESCRIPTIONS: Readonly<
+  Record<ContractErrorName, string>
+> = Object.freeze({
   AlreadyInitialized: "The treasury has already been initialized.",
   NotInitialized: "The treasury has not been initialized.",
   Unauthorized: "The caller does not have the role required for this action.",
@@ -111,7 +118,7 @@ const CONTRACT_ERROR_MESSAGES: Record<ContractErrorName, string> = {
   TokenNotAllowed: "The token is not enabled in the treasury policy.",
   MemoTooLong: "The memo or name is longer than 256 bytes.",
   TooManyPending: "The treasury has too many pending proposals; execute or cancel some first.",
-};
+});
 
 const NAME_BY_CODE = new Map<number, ContractErrorName>(
   (Object.entries(ContractErrorCode) as [ContractErrorName, number][]).map(([name, code]) => [
@@ -119,6 +126,19 @@ const NAME_BY_CODE = new Map<number, ContractErrorName>(
     name,
   ]),
 );
+
+/**
+ * Get the readable description for a contract error name or numeric code.
+ *
+ * Unknown numeric codes use the same fallback message as {@link ContractError}.
+ */
+export function describeContractError(nameOrCode: ContractErrorName | number): string {
+  const name =
+    typeof nameOrCode === "number" ? NAME_BY_CODE.get(nameOrCode) : nameOrCode;
+  return name === undefined
+    ? `Unknown contract error #${nameOrCode}. The contract may be newer than this SDK.`
+    : CONTRACT_ERROR_DESCRIPTIONS[name];
+}
 
 /** Thrown when the treasury contract rejects a call with one of its own error codes. */
 export class ContractError extends StellarSafeError {
@@ -131,8 +151,8 @@ export class ContractError extends StellarSafeError {
   constructor(contractCode: number, options?: { cause?: unknown }) {
     const name = NAME_BY_CODE.get(contractCode);
     const message = name
-      ? `${name} (#${contractCode}): ${CONTRACT_ERROR_MESSAGES[name]}`
-      : `Unknown contract error #${contractCode}. The contract may be newer than this SDK.`;
+      ? `${name} (#${contractCode}): ${describeContractError(name)}`
+      : describeContractError(contractCode);
     super("CONTRACT_ERROR", message, options);
     this.contractCode = contractCode;
     this.contractErrorName = name;
