@@ -7,16 +7,19 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  id-token: write # npm provenance
+  id-token: write # npm provenance / trusted publishing
 
 concurrency: release-${{ github.ref }}
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      # Publishing is enabled once an NPM_TOKEN secret (or trusted publishing) is configured.
+      CAN_PUBLISH: ${{ secrets.NPM_TOKEN != '' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -24,13 +27,22 @@ jobs:
       - run: npm ci
       - run: npm run ci
       - name: Version PR or publish
-        uses: changesets/action@v1
+        if: env.CAN_PUBLISH == 'true'
+        uses: changesets/action@v2
         with:
-          version: npx changeset version
-          publish: npx changeset publish
-          title: "chore: release"
-          commit: "chore: release"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          version-script: npx changeset version
+          publish-script: npx changeset publish
+          pr-title: "chore: release"
+          commit-message: "chore: release"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
+      - name: Version PR only (npm publishing not configured)
+        if: env.CAN_PUBLISH != 'true'
+        uses: changesets/action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          version-script: npx changeset version
+          pr-title: "chore: release"
+          commit-message: "chore: release"
