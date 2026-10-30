@@ -50,7 +50,7 @@ export type RpcClient = Pick<
 export const READ_ONLY_SOURCE = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
 
 /** Options for building a write transaction. */
-export interface PrepareOptions {
+export interface PrepareOptions extends ReadConsistency {
   /**
    * Account that pays the fee and sequence number. Defaults to the acting
    * member. When it differs, the member must authorize the call separately
@@ -62,6 +62,20 @@ export interface PrepareOptions {
   /** Seconds until the transaction expires. Default: 300. */
   readonly timeoutSeconds?: number;
   readonly signal?: AbortSignal;
+}
+
+/**
+ * Read-your-writes control. Public RPC endpoints are load-balanced, so a read
+ * right after a confirmed write can hit a node that has not seen it yet.
+ */
+export interface ReadConsistency {
+  /**
+   * Only accept results simulated at or after this ledger; re-simulate until
+   * the RPC node catches up. Pass `result.ledger` from the write you just made.
+   */
+  readonly minLedger?: number;
+  /** How long to wait for the node to reach `minLedger`, in ms. Default 30_000. */
+  readonly minLedgerTimeoutMs?: number;
 }
 
 /** Options for submitting a signed transaction. */
@@ -114,6 +128,10 @@ export type Decode<T> = (v: xdr.ScVal) => T;
 /** @internal Shared plumbing used by every client. */
 export class TransactionPipeline {
   private networkVerified: Promise<void> | undefined;
+  /** Highest ledger in which this pipeline saw one of its transactions applied. */
+  private lastWriteLedger = 0;
+  /** Last sequence number this pipeline consumed per source account. */
+  private readonly sequences = new Map<string, bigint>();
 
   constructor(private readonly config: PipelineConfig) {}
 
@@ -164,15 +182,50 @@ export class TransactionPipeline {
     method: string,
     args: readonly xdr.ScVal[],
     decode: Decode<T>,
-    signal?: AbortSignal,
+    opts: ReadConsistency & { readonly signal?: AbortSignal | undefined } = {},
   ): Promise<{ result: T; latestLedger: number }> {
     const tx = this.build(
       new Account(READ_ONLY_SOURCE, "0"),
       contractCall(contractId, method, args),
       {},
     );
-    const sim = await this.simulate(tx, signal);
+    const sim = await this.simulateAtLeast(tx, opts);
     return { result: decodeRetval(sim, decode), latestLedger: sim.latestLedger };
+  }
+
+  /**
+   * Simulate, re-trying on a node that has not yet reached `minLedger`
+   * (default: the last ledger this pipeline wrote in — read-your-writes).
+   */
+  private async simulateAtLeast(
+    tx: Transaction,
+    opts: ReadConsistency & { readonly signal?: AbortSignal | undefined },
+    authMode?: rpc.Api.SimulationAuthMode,
+  ): Promise<rpc.Api.SimulateTransactionSuccessResponse> {
+    const minLedger = opts.minLedger ?? this.lastWriteLedger;
+    const deadline = Date.now() + (opts.minLedgerTimeoutMs ?? 30_000);
+    for (;;) {
+      const sim = await this.simulate(tx, opts.signal, authMode);
+      if (sim.latestLedger >= minLedger) return sim;
+      // Load-balanced RPC: this node has not yet seen the ledger we need.
+      if (Date.now() >= deadline) {
+        throw new RpcError(
+          `RPC node is at ledger ${sim.latestLedger}, behind the required ledger ${minLedger}`,
+        );
+      }
+      await sleep(READ_RETRY_MS, opts.signal);
+    }
+  }
+
+  /** Load the source account, never going backwards from a sequence this pipeline already used. */
+  private async loadAccount(source: string, signal?: AbortSignal): Promise<Account> {
+    const account = await this.call("getAccount", (r) => r.getAccount(source), signal);
+    const known = this.sequences.get(source);
+    if (known !== undefined && BigInt(account.sequenceNumber()) < known) {
+      // A lagging RPC node returned a stale sequence; the next valid one follows ours.
+      return new Account(source, known.toString());
+    }
+    return account;
   }
 
   /** Build, simulate and assemble a contract call, ready for signing. */
@@ -194,9 +247,9 @@ export class TransactionPipeline {
   ): Promise<PreparedTransaction<T>> {
     assertSource(opts.source);
     await this.verifyNetwork(opts.signal);
-    const account = await this.call("getAccount", (r) => r.getAccount(opts.source), opts.signal);
+    const account = await this.loadAccount(opts.source, opts.signal);
     const raw = this.build(account, operation, opts);
-    const sim = await this.simulate(raw, opts.signal);
+    const sim = await this.simulateAtLeast(raw, opts);
     const result = decodeRetval(sim, decode);
     const assembled = rpc.assembleTransaction(raw, sim).build();
     return new PreparedTransaction(this, assembled, result, sim, decode, inclusionFee(opts));
@@ -212,7 +265,7 @@ export class TransactionPipeline {
   ): Promise<PreparedTransaction<void>> {
     assertSource(opts.source);
     await this.verifyNetwork(opts.signal);
-    const account = await this.call("getAccount", (r) => r.getAccount(opts.source), opts.signal);
+    const account = await this.loadAccount(opts.source, opts.signal);
     const inclusion = inclusionFee(opts);
     const tx = new TransactionBuilder(account, {
       fee: (BigInt(inclusion) + BigInt(error.minResourceFee)).toString(),
@@ -240,7 +293,7 @@ export class TransactionPipeline {
     transaction: Transaction;
     sim: rpc.Api.SimulateTransactionSuccessResponse;
   }> {
-    const sim = await this.simulate(tx, signal, "enforce");
+    const sim = await this.simulateAtLeast(tx, { signal }, "enforce");
     return { transaction: rpc.assembleTransaction(tx, sim).build(), sim };
   }
 
@@ -301,6 +354,7 @@ export class TransactionPipeline {
       );
     }
     const res = await this.waitForTransaction(hash, opts);
+    this.recordApplied(tx, res.ledger);
     if (res.status === rpc.Api.GetTransactionStatus.FAILED) {
       const code = findContractErrorCode(res.diagnosticEventsXdr);
       const detail =
@@ -319,6 +373,14 @@ export class TransactionPipeline {
       events: decodeTransactionEvents(res, hash),
       feeCharged: res.resultXdr.feeCharged,
     };
+  }
+
+  /** Remember what an applied transaction consumed, for session consistency. */
+  private recordApplied(tx: Transaction | FeeBumpTransaction, ledger: number): void {
+    this.lastWriteLedger = Math.max(this.lastWriteLedger, ledger);
+    const inner = "innerTransaction" in tx ? tx.innerTransaction : tx;
+    const seq = BigInt(inner.sequence);
+    if ((this.sequences.get(inner.source) ?? -1n) < seq) this.sequences.set(inner.source, seq);
   }
 
   private async sendWithBackoff(
@@ -590,6 +652,7 @@ export class PreparedTransaction<T> {
 const DEFAULT_FEE = 100_000;
 const DEFAULT_TIMEOUT_SECONDS = 300;
 const MAX_TRY_AGAIN = 4;
+const READ_RETRY_MS = 500;
 const VOID = xdr.ScVal.scvVoid();
 
 function contractCall(contractId: string, method: string, args: readonly xdr.ScVal[]) {

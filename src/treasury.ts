@@ -21,6 +21,7 @@ import type { TransactionSigner } from "./signer.js";
 import type {
   PreparedTransaction,
   PrepareOptions,
+  ReadConsistency,
   SubmitOptions,
   TransactionPipeline,
   TransactionResult,
@@ -55,7 +56,7 @@ export const SUPPORTED_INTERFACE_VERSION = 1;
 export type WriteOptions = Omit<PrepareOptions, "source"> & { readonly source?: string };
 
 /** Options accepted by every read method. */
-export interface ReadOptions {
+export interface ReadOptions extends ReadConsistency {
   readonly signal?: AbortSignal;
 }
 
@@ -187,16 +188,15 @@ export class TreasuryClient {
    * `ledger` is the newest one seen.
    */
   async getSnapshot(opts?: ReadOptions): Promise<TreasurySnapshot> {
-    const signal = opts?.signal;
     const [config, policy, members, pending] = await Promise.all([
-      this.readWithLedger("get_config", [], (v) => decodeTreasuryConfig(v), signal),
-      this.readWithLedger("get_policy", [], (v) => decodePolicy(v), signal),
-      this.readWithLedger("get_members", [], (v) => dec.vec(v, "members", decodeMember), signal),
+      this.readWithLedger("get_config", [], (v) => decodeTreasuryConfig(v), opts),
+      this.readWithLedger("get_policy", [], (v) => decodePolicy(v), opts),
+      this.readWithLedger("get_members", [], (v) => dec.vec(v, "members", decodeMember), opts),
       this.readWithLedger(
         "get_pending_proposals",
         [],
         (v) => dec.vec(v, "proposals", decodeProposal),
-        signal,
+        opts,
       ),
     ]);
     return {
@@ -391,16 +391,16 @@ export class TreasuryClient {
     decode: (v: xdr.ScVal) => T,
     opts?: ReadOptions,
   ): Promise<T> {
-    return (await this.readWithLedger(method, args, decode, opts?.signal)).result;
+    return (await this.readWithLedger(method, args, decode, opts)).result;
   }
 
   private readWithLedger<T>(
     method: string,
     args: xdr.ScVal[],
     decode: (v: xdr.ScVal) => T,
-    signal: AbortSignal | undefined,
+    opts: ReadOptions | undefined,
   ): Promise<{ result: T; latestLedger: number }> {
-    return this.pipeline.read(this.contractId, method, args, decode, signal);
+    return this.pipeline.read(this.contractId, method, args, decode, opts);
   }
 
   private write<T>(

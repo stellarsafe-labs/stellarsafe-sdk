@@ -51,10 +51,14 @@ export interface FakeRpc extends RpcClient {
   readonly simAuthModes: (string | undefined)[];
   /** Diagnostic events attached to FAILED transactions / ERROR sends. */
   failureEvents: xdr.DiagnosticEvent[];
+  /** Current ledger reported by the fake. */
+  ledger: number;
+  /** Ledgers reported by successive simulations (consumed first), to mimic lagging nodes. */
+  simLedgers: number[];
+  nextSimLedger(): number;
 }
 
 export function fakeRpc(opts: FakeRpcOptions = {}): FakeRpc {
-  const latestLedger = opts.latestLedger ?? 1000;
   const lastResult = new Map<string, ScVal>();
   const fake: FakeRpc = {
     calls: [],
@@ -69,6 +73,11 @@ export function fakeRpc(opts: FakeRpcOptions = {}): FakeRpc {
     rawSimError: undefined,
     simAuthModes: [],
     failureEvents: [],
+    ledger: opts.latestLedger ?? 1000,
+    simLedgers: [],
+    nextSimLedger() {
+      return fake.simLedgers.shift() ?? fake.ledger;
+    },
 
     async getNetwork() {
       return { passphrase: opts.passphrase ?? Networks.TESTNET, protocolVersion: "23" };
@@ -81,7 +90,7 @@ export function fakeRpc(opts: FakeRpcOptions = {}): FakeRpc {
     async getLatestLedger() {
       return {
         id: "x",
-        sequence: latestLedger,
+        sequence: fake.ledger,
         protocolVersion: "23",
         closeTime: "1800000000",
       } as Awaited<ReturnType<RpcClient["getLatestLedger"]>>;
@@ -91,7 +100,12 @@ export function fakeRpc(opts: FakeRpcOptions = {}): FakeRpc {
       const { method, args, invoke, existingAuth } = invocation(tx as Transaction);
       fake.calls.push({ method, args });
       fake.simAuthModes.push(authMode);
-      const base = { id: "1", latestLedger, events: [], _parsed: true as const };
+      const base = {
+        id: "1",
+        latestLedger: fake.nextSimLedger(),
+        events: [],
+        _parsed: true as const,
+      };
       if (fake.rawSimError) return { ...base, error: fake.rawSimError };
       const handler = fake.handlers[method];
       if (!handler) return { ...base, error: `HostError: no handler for ${method}` };
@@ -133,7 +147,7 @@ export function fakeRpc(opts: FakeRpcOptions = {}): FakeRpc {
       return {
         status,
         hash: "",
-        latestLedger,
+        latestLedger: fake.ledger,
         latestLedgerCloseTime: 0,
         ...(status === "ERROR"
           ? {
@@ -148,19 +162,21 @@ export function fakeRpc(opts: FakeRpcOptions = {}): FakeRpc {
       const status = fake.txStatuses.shift() ?? "SUCCESS";
       const common = {
         txHash: hash,
-        latestLedger,
+        latestLedger: fake.ledger,
         latestLedgerCloseTime: 0,
         oldestLedger: 1,
         oldestLedgerCloseTime: 0,
       };
       if (status === "NOT_FOUND") return { ...common, status } as never;
       const tx = fake.submitted.at(-1) as Transaction;
+      // The transaction is applied in the next ledger, which the fake now reports.
+      fake.ledger += 1;
       const { method } = invocation(tx);
       const contractIdBytes = new Uint8Array(32).fill(10);
       return {
         ...common,
         status,
-        ledger: latestLedger + 1,
+        ledger: fake.ledger,
         createdAt: 1_800_000_000,
         applicationOrder: 1,
         feeBump: false,
@@ -189,7 +205,7 @@ export function fakeRpc(opts: FakeRpcOptions = {}): FakeRpc {
         page ?? {
           events: [],
           cursor: "end",
-          latestLedger,
+          latestLedger: fake.ledger,
           oldestLedger: 1,
           latestLedgerCloseTime: "0",
           oldestLedgerCloseTime: "0",

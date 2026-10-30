@@ -539,3 +539,60 @@ describe("errors are always StellarSafeError", () => {
     expect(err.cause).toBeInstanceOf(Error);
   });
 });
+
+describe("read-your-writes (minLedger)", () => {
+  it("re-simulates until the RPC node reaches minLedger", async () => {
+    rpc.simLedgers = [998, 999];
+    const p = await treasury().getProposal(1n, { minLedger: 1000 });
+    expect(p.id).toBe(1n);
+    expect(rpc.calls.filter((c) => c.method === "get_proposal")).toHaveLength(3);
+  });
+
+  it("does not wait when no minLedger is given", async () => {
+    rpc.simLedgers = [5];
+    await treasury().getPolicy();
+    expect(rpc.calls).toHaveLength(1);
+  });
+
+  it("applies to snapshots", async () => {
+    rpc.simLedgers = [999];
+    const snap = await treasury().getSnapshot({ minLedger: 1000 });
+    expect(snap.ledger).toBe(1000);
+  });
+
+  it("gives up after minLedgerTimeoutMs", async () => {
+    rpc.simLedgers = Array(50).fill(1);
+    await expect(
+      treasury().getPolicy({ minLedger: 1000, minLedgerTimeoutMs: 1 }),
+    ).rejects.toMatchObject({ code: "RPC_ERROR", message: expect.stringMatching(/behind/) });
+  });
+});
+
+describe("session consistency", () => {
+  it("reads after a write wait for the write's ledger automatically", async () => {
+    const res = await (
+      await treasury().approvePayment({ approver: APPROVER.publicKey(), proposalId: 1n })
+    ).signAndSubmit(keypairSigner(APPROVER), { pollIntervalMs: 1 });
+    expect(res.ledger).toBe(1001);
+    rpc.simLedgers = [1000]; // a lagging node answers first
+    const before = rpc.calls.length;
+    await treasury().getProposal(1n);
+    expect(rpc.calls.length - before).toBe(2);
+  });
+
+  it("never reuses a sequence number when the RPC returns a stale account", async () => {
+    // The fake always reports sequence 100, like a node that missed our last transaction.
+    const signer = keypairSigner(APPROVER);
+    const first = await treasury().approvePayment({
+      approver: APPROVER.publicKey(),
+      proposalId: 1n,
+    });
+    await first.signAndSubmit(signer, { pollIntervalMs: 1 });
+    const second = await treasury().revokeApproval({
+      approver: APPROVER.publicKey(),
+      proposalId: 1n,
+    });
+    expect(first.transaction.sequence).toBe("101");
+    expect(second.transaction.sequence).toBe("102");
+  });
+});

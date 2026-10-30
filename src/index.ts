@@ -68,6 +68,7 @@ export { keypairSigner } from "./signer.js";
 export type {
   FeeEstimate,
   PrepareOptions,
+  ReadConsistency,
   RpcClient,
   SubmitOptions,
   TransactionResult,
