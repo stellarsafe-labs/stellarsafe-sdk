@@ -1,0 +1,88 @@
+{
+  "name": "@stellarsafe/sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for StellarSafe \u2014 typed clients for the StellarSafe treasury, policy and approval contracts on Stellar/Soroban.",
+  "license": "Apache-2.0",
+  "author": "StellarSafe Labs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stellarsafe-labs/stellarsafe-sdk.git"
+  },
+  "homepage": "https://github.com/stellarsafe-labs/stellarsafe-sdk#readme",
+  "bugs": "https://github.com/stellarsafe-labs/stellarsafe-sdk/issues",
+  "keywords": [
+    "stellar",
+    "soroban",
+    "treasury",
+    "multisig",
+    "policy",
+    "smart-contracts",
+    "sdk"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "!dist/.browser-check.js",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "STELLARSAFE_INTEGRATION=1 vitest run",
+    "check:exports": "publint && attw --pack . --profile node16",
+    "docs": "typedoc",
+    "prepublishOnly": "npm run clean && npm run build && npm run check:exports",
+    "ci": "npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run check:exports && npm run check:browser",
+    "check:browser": "esbuild dist/index.js --bundle --platform=browser --format=esm --log-level=warning --outfile=dist/.browser-check.js && rm dist/.browser-check.js",
+    "test:e2e": "STELLARSAFE_INTEGRATION=1 STELLARSAFE_E2E=1 vitest run test/integration/lifecycle.e2e.test.ts"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "^17.4.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@biomejs/biome": "^2.6.4",
+    "@changesets/cli": "^3.0.3",
+    "@types/node": "^22.20.5",
+    "@vitest/coverage-v8": "^5.0.5",
+    "esbuild": "^0.28.2",
+    "publint": "^0.3.25",
+    "tsup": "^9.0.0",
+    "typedoc": "^0.28.20",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.5"
+  }
+}

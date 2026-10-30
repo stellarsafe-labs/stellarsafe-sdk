@@ -1,0 +1,28 @@
+name: Contributor task
+description: A scoped task for contributors (maintainers)
+labels: [help wanted]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      value: |
+        - [ ] 
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of done
+      value: |
+        - [ ] Tests added and `npm run ci` passes
+        - [ ] TSDoc on new public API
+        - [ ] Changeset added
+    validations:
+      required: true
