@@ -23,5 +23,5 @@
       "@stellarsafe/sdk": ["./src/index.ts"]
     }
   },
-  "include": ["src", "test", "examples", "*.config.ts"]
+  "include": ["src", "test", "examples", "scripts", "*.config.ts"]
 }
