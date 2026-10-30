@@ -7,7 +7,17 @@ updates:
     groups:
       dev-dependencies:
         dependency-type: development
+    ignore:
+      # Major TypeScript upgrades need typedoc/tsup support first; upgrade by hand.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      # Types must match the minimum supported Node.js (22), not the latest.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
