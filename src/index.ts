@@ -25,8 +25,10 @@ export {
 } from "./codec.js";
 export type { ContractErrorName, StellarSafeErrorCode } from "./errors.js";
 export {
+  CONTRACT_ERROR_DESCRIPTIONS,
   ContractError,
   ContractErrorCode,
+  describeContractError,
   DecodeError,
   isContractError,
   isStellarSafeError,
