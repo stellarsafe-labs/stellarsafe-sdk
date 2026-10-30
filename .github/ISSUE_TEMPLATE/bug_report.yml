@@ -1,0 +1,44 @@
+name: Bug report
+description: Something in the SDK does not work as documented
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "**Security issues:** do not file here — see SECURITY.md."
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Include the error `code` and message if one was thrown.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      render: ts
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: SDK version
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: network
+    attributes:
+      label: Network
+      options: [testnet, futurenet, local, mainnet, custom]
+  - type: input
+    id: env
+    attributes:
+      label: Runtime
+      placeholder: Node 22.12 / Chrome 130 + Vite
