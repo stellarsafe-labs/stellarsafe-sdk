@@ -359,6 +359,13 @@ new StellarSafeClient({
 });
 ```
 
+**Read-your-writes.** Public RPC endpoints are load-balanced, so a read
+right after a write can reach a node that is a ledger behind. After a client
+confirms one of its transactions, its later reads and simulations wait until
+the RPC has caught up to that ledger, and it never reuses an account sequence
+number a lagging node reports. For writes made elsewhere (another client, a
+backend), pass the ledger explicitly: `safe.getProposal(id, { minLedger })`.
+
 Transient RPC failures (network errors, 429, 5xx) are retried with
 exponential backoff and jitter. Before the first write the client checks the
 RPC server's network passphrase matches its configuration.
