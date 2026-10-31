@@ -1,0 +1,368 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="./"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>@stellarsafe/sdk</title><meta name="description" content="Documentation for @stellarsafe/sdk"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script><script async src="assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="index.html" class="title">@stellarsafe/sdk</a>
+<div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<h1>@stellarsafe/sdk</h1></div>
+<div class="tsd-panel tsd-typography"><h1 id="stellarsafesdk" class="tsd-anchor-link">@stellarsafe/sdk<a href="#stellarsafesdk" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p>TypeScript SDK for <strong>StellarSafe</strong>, an open-source <strong>spending-policy engine</strong>
+for Stellar. Treasuries, DAOs and payroll apps hold funds in a Soroban
+contract that enforces approval thresholds, recipient and token allowlists,
+department spending limits and approval expiry <strong>on-chain</strong>. This SDK lets any
+app, not just the StellarSafe dashboard, read policies, prepare and simulate
+payments, sign with any Stellar wallet and index contract events.</p>
+<p><a href="https://github.com/stellarsafe-labs/stellarsafe-sdk/actions/workflows/ci.yml"><img src="https://github.com/stellarsafe-labs/stellarsafe-sdk/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License: Apache-2.0"></a></p>
+<blockquote>
+<p><strong>Status: pre-1.0, testnet only.</strong> The StellarSafe contracts have not been
+audited. Do not hold real funds in a StellarSafe treasury until they have.</p>
+</blockquote>
+<h2 id="live-demo-on-testnet" class="tsd-anchor-link">Live demo on testnet<a href="#live-demo-on-testnet" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>A demo treasury deployed with this SDK (<code>scripts/demo-testnet.ts</code>):</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Treasury</td>
+<td><a href="https://stellar.expert/explorer/testnet/contract/CCDNZXL2PRPWTN7H6QF7HIRTFZXX73FG3VV7VB4EU2MWG6C2VXYG2QRR"><code>CCDNZXL2…G2QRR</code></a></td>
+</tr>
+<tr>
+<td>Policy</td>
+<td>1 approval by default, 2 for ≥ 25 XLM; allowlisted vendor only; <code>ops</code> limited to 100 XLM per 30 days</td>
+</tr>
+<tr>
+<td>Deployment (constructor setup)</td>
+<td><a href="https://stellar.expert/explorer/testnet/tx/16644bf61ef89efc0e9fa7a2fa525065a347dde80507c5eae1c2ff498206352e">tx</a></td>
+</tr>
+<tr>
+<td>10 XLM payment, 1 approval</td>
+<td><a href="https://stellar.expert/explorer/testnet/tx/b4334922d260da9c567e960ae58f16f104c51a628a545126380990a00d7375fe">executed</a></td>
+</tr>
+<tr>
+<td>30 XLM payment, 2 approvals</td>
+<td><a href="https://stellar.expert/explorer/testnet/tx/0b25f8ea66b0c2e8e08a672195e88c2efc1d3af01588ee5706859fc3c28c8411">executed</a></td>
+</tr>
+<tr>
+<td>Proposal #3, 40 XLM</td>
+<td>pending, 1 of 2 approvals</td>
+</tr>
+</tbody>
+</table>
+<p>Read it yourself:</p>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">build</span><br/><span class="hl-3">STELLARSAFE_TREASURY_ID</span><span class="hl-1">=</span><span class="hl-2">CCDNZXL2PRPWTN7H6QF7HIRTFZXX73FG3VV7VB4EU2MWG6C2VXYG2QRR</span><span class="hl-1"> </span><span class="hl-0">node</span><span class="hl-1"> </span><span class="hl-2">examples/read-treasury.ts</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Testnet is reset periodically; rerun <code>node scripts/demo-testnet.ts</code> to recreate it.</p>
+<h2 id="contents" class="tsd-anchor-link">Contents<a href="#contents" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><a href="#install">Install</a></li>
+<li><a href="#quick-start">Quick start</a></li>
+<li><a href="#reading-a-treasury">Reading a treasury</a></li>
+<li><a href="#writing-prepare--sign--submit">Writing: prepare → sign → submit</a></li>
+<li><a href="#deploying-a-treasury">Deploying a treasury</a></li>
+<li><a href="#wallets-and-signers">Wallets and signers</a></li>
+<li><a href="#policy-helpers">Policy helpers</a></li>
+<li><a href="#events">Events</a></li>
+<li><a href="#amounts">Amounts</a></li>
+<li><a href="#errors">Errors</a></li>
+<li><a href="#configuration">Configuration</a></li>
+<li><a href="#security-model">Security model</a></li>
+<li><a href="#development">Development</a></li>
+<li><a href="#contributing">Contributing</a></li>
+</ul>
+<h2 id="install" class="tsd-anchor-link">Install<a href="#install" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<blockquote>
+<p><strong>Not on npm yet.</strong> The first release will be published as <code>@stellarsafe/sdk</code>.
+Until then, build it from source:</p>
+<pre><code class="sh"><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">clone</span><span class="hl-1"> </span><span class="hl-2">https://github.com/stellarsafe-labs/stellarsafe-sdk</span><br/><span class="hl-0">cd</span><span class="hl-1"> </span><span class="hl-2">stellarsafe-sdk</span><span class="hl-1"> &amp;&amp; </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">ci</span><span class="hl-1"> &amp;&amp; </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">build</span><span class="hl-1"> &amp;&amp; </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">pack</span><br/><span class="hl-4"># in your app:</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><span class="hl-1"> </span><span class="hl-2">/path/to/stellarsafe-sdk/stellarsafe-sdk-</span><span class="hl-5">*</span><span class="hl-2">.tgz</span>
+</code><button type="button">Copy</button></pre>
+
+</blockquote>
+<p>Once published:</p>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><span class="hl-1"> </span><span class="hl-2">@stellarsafe/sdk</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Requires Node.js ≥ 22.12 or a modern browser/bundler. <code>@stellar/stellar-sdk</code>
+is a dependency and is installed automatically. Ships ESM, CommonJS and
+TypeScript declarations.</p>
+<h2 id="quick-start" class="tsd-anchor-link">Quick start<a href="#quick-start" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="ts"><span class="hl-6">import</span><span class="hl-1"> { </span><span class="hl-3">StellarSafeClient</span><span class="hl-1"> } </span><span class="hl-6">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@stellarsafe/sdk&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">client</span><span class="hl-1"> = </span><span class="hl-5">new</span><span class="hl-1"> </span><span class="hl-0">StellarSafeClient</span><span class="hl-1">({ </span><span class="hl-3">network:</span><span class="hl-1"> </span><span class="hl-2">&quot;testnet&quot;</span><span class="hl-1"> });</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">treasury</span><span class="hl-1"> = </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">client</span><span class="hl-1">.</span><span class="hl-0">getTreasury</span><span class="hl-1">(</span><span class="hl-2">&quot;CBX…TREASURY_CONTRACT_ID&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-3">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-3">treasury</span><span class="hl-1">.</span><span class="hl-3">policy</span><span class="hl-1">);</span><br/><span class="hl-3">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-3">treasury</span><span class="hl-1">.</span><span class="hl-3">pendingProposals</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="reading-a-treasury" class="tsd-anchor-link">Reading a treasury<a href="#reading-a-treasury" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Reads simulate a contract call. They need no account, signature or fee.</p>
+<pre><code class="ts"><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">safe</span><span class="hl-1"> = </span><span class="hl-3">client</span><span class="hl-1">.</span><span class="hl-0">treasury</span><span class="hl-1">(</span><span class="hl-2">&quot;CBX…&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">safe</span><span class="hl-1">.</span><span class="hl-0">getConfig</span><span class="hl-1">(); </span><span class="hl-4">// { name, proposalCount, interfaceVersion }</span><br/><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">safe</span><span class="hl-1">.</span><span class="hl-0">getPolicy</span><span class="hl-1">(); </span><span class="hl-4">// thresholds, allowlists, limits, version …</span><br/><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">safe</span><span class="hl-1">.</span><span class="hl-0">getMembers</span><span class="hl-1">(); </span><span class="hl-4">// [{ address, role }]</span><br/><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">safe</span><span class="hl-1">.</span><span class="hl-0">getRole</span><span class="hl-1">(</span><span class="hl-2">&quot;GABC…&quot;</span><span class="hl-1">); </span><span class="hl-4">// &quot;Admin&quot; | &quot;Approver&quot; | &quot;Proposer&quot; | undefined</span><br/><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">safe</span><span class="hl-1">.</span><span class="hl-0">getProposal</span><span class="hl-1">(</span><span class="hl-8">12</span><span class="hl-5">n</span><span class="hl-1">); </span><span class="hl-4">// one proposal</span><br/><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">safe</span><span class="hl-1">.</span><span class="hl-0">getPendingProposals</span><span class="hl-1">(); </span><span class="hl-4">// all with status Pending</span><br/><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">safe</span><span class="hl-1">.</span><span class="hl-0">listProposals</span><span class="hl-1">({ </span><span class="hl-3">start:</span><span class="hl-1"> </span><span class="hl-8">1</span><span class="hl-5">n</span><span class="hl-1">, </span><span class="hl-3">limit:</span><span class="hl-1"> </span><span class="hl-8">50</span><span class="hl-1"> });</span><br/><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">safe</span><span class="hl-1">.</span><span class="hl-0">getSpending</span><span class="hl-1">(</span><span class="hl-2">&quot;ops&quot;</span><span class="hl-1">, </span><span class="hl-7">USDC</span><span class="hl-1">); </span><span class="hl-4">// { spent, limit, remaining, periodIndex }</span><br/><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">safe</span><span class="hl-1">.</span><span class="hl-0">getSnapshot</span><span class="hl-1">(); </span><span class="hl-4">// config + policy + members + pending, in parallel</span><br/><br/><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">safe</span><span class="hl-1">.</span><span class="hl-0">assertCompatible</span><span class="hl-1">(); </span><span class="hl-4">// throws if the contract&#39;s interface version differs</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="writing-prepare-→-sign-→-submit" class="tsd-anchor-link">Writing: prepare → sign → submit<a href="#writing-prepare-→-sign-→-submit" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Every write returns a <code>PreparedTransaction</code>: built, <strong>simulated</strong> against the
+current ledger, and assembled with resources and fees. Nothing is sent until
+you sign and submit, so you can show the user the outcome and fee first.</p>
+<pre><code class="ts"><span class="hl-6">import</span><span class="hl-1"> { </span><span class="hl-3">keypairSigner</span><span class="hl-1">, </span><span class="hl-3">parseAmount</span><span class="hl-1"> } </span><span class="hl-6">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@stellarsafe/sdk&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> { </span><span class="hl-7">closeTime</span><span class="hl-1"> } = </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">client</span><span class="hl-1">.</span><span class="hl-0">getLedgerTime</span><span class="hl-1">();</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">tx</span><span class="hl-1"> = </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">safe</span><span class="hl-1">.</span><span class="hl-0">proposePayment</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-3">proposer:</span><span class="hl-1"> </span><span class="hl-2">&quot;GPROPOSER…&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-3">token:</span><span class="hl-1"> </span><span class="hl-7">USDC_CONTRACT_ID</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-3">recipient:</span><span class="hl-1"> </span><span class="hl-2">&quot;GVENDOR…&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-3">amount:</span><span class="hl-1"> </span><span class="hl-0">parseAmount</span><span class="hl-1">(</span><span class="hl-2">&quot;750&quot;</span><span class="hl-1">, </span><span class="hl-8">7</span><span class="hl-1">), </span><span class="hl-4">// 750 USDC → 7_500_000_000n</span><br/><span class="hl-1">  </span><span class="hl-3">department:</span><span class="hl-1"> </span><span class="hl-2">&quot;ops&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-3">memo:</span><span class="hl-1"> </span><span class="hl-2">&quot;Invoice #1042&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-3">expiresAt:</span><span class="hl-1"> </span><span class="hl-3">closeTime</span><span class="hl-1"> + </span><span class="hl-8">3</span><span class="hl-5">n</span><span class="hl-1"> * </span><span class="hl-8">86_400</span><span class="hl-5">n</span><span class="hl-1">, </span><span class="hl-4">// 3 days, in ledger time</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-3">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-3">tx</span><span class="hl-1">.</span><span class="hl-3">result</span><span class="hl-1">); </span><span class="hl-4">// the proposal id this call will return</span><br/><span class="hl-3">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-3">tx</span><span class="hl-1">.</span><span class="hl-3">fee</span><span class="hl-1">); </span><span class="hl-4">// { inclusion, resource, total } in stroops</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> { </span><span class="hl-3">result</span><span class="hl-1">: </span><span class="hl-7">proposalId</span><span class="hl-1">, </span><span class="hl-7">hash</span><span class="hl-1">, </span><span class="hl-7">events</span><span class="hl-1"> } = </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">tx</span><span class="hl-1">.</span><span class="hl-0">signAndSubmit</span><span class="hl-1">(</span><span class="hl-3">signer</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Other writes follow the same shape: <code>approvePayment</code>, <code>revokeApproval</code>,
+<code>executePayment</code>, <code>cancelPayment</code>, <code>addMember</code>, <code>removeMember</code> and
+<code>setPolicy</code>. The acting member is the transaction source by default.</p>
+<p>If a contract rule would be broken, preparation throws a <code>ContractError</code>
+<strong>before</strong> anything is signed:</p>
+<pre><code class="ts"><span class="hl-6">import</span><span class="hl-1"> { </span><span class="hl-3">isContractError</span><span class="hl-1"> } </span><span class="hl-6">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@stellarsafe/sdk&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">try</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">safe</span><span class="hl-1">.</span><span class="hl-0">executePayment</span><span class="hl-1">({ </span><span class="hl-3">executor:</span><span class="hl-1"> </span><span class="hl-3">me</span><span class="hl-1">, </span><span class="hl-3">proposalId</span><span class="hl-1"> });</span><br/><span class="hl-1">} </span><span class="hl-6">catch</span><span class="hl-1"> (</span><span class="hl-3">err</span><span class="hl-1">) {</span><br/><span class="hl-1">  </span><span class="hl-6">if</span><span class="hl-1"> (</span><span class="hl-0">isContractError</span><span class="hl-1">(</span><span class="hl-3">err</span><span class="hl-1">, </span><span class="hl-2">&quot;InsufficientApprovals&quot;</span><span class="hl-1">)) {</span><br/><span class="hl-1">    </span><span class="hl-4">/* show approval progress */</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="bound-signer" class="tsd-anchor-link">Bound signer<a href="#bound-signer" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>For scripts and backends, <code>connect()</code> returns a client whose writes sign and
+submit immediately:</p>
+<pre><code class="ts"><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">ops</span><span class="hl-1"> = </span><span class="hl-3">client</span><span class="hl-1">.</span><span class="hl-0">treasury</span><span class="hl-1">(</span><span class="hl-2">&quot;CBX…&quot;</span><span class="hl-1">).</span><span class="hl-0">connect</span><span class="hl-1">(</span><span class="hl-0">keypairSigner</span><span class="hl-1">(</span><span class="hl-3">process</span><span class="hl-1">.</span><span class="hl-3">env</span><span class="hl-1">.</span><span class="hl-7">APPROVER_SECRET</span><span class="hl-1">!));</span><br/><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">ops</span><span class="hl-1">.</span><span class="hl-0">approvePayment</span><span class="hl-1">({ </span><span class="hl-3">proposalId:</span><span class="hl-1"> </span><span class="hl-8">12</span><span class="hl-5">n</span><span class="hl-1"> });</span><br/><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">ops</span><span class="hl-1">.</span><span class="hl-0">executePayment</span><span class="hl-1">({ </span><span class="hl-3">proposalId:</span><span class="hl-1"> </span><span class="hl-8">12</span><span class="hl-5">n</span><span class="hl-1"> });</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="external-or-multisig-signing" class="tsd-anchor-link">External or multisig signing<a href="#external-or-multisig-signing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="ts"><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">tx</span><span class="hl-1"> = </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">safe</span><span class="hl-1">.</span><span class="hl-0">approvePayment</span><span class="hl-1">({ </span><span class="hl-3">approver:</span><span class="hl-1"> </span><span class="hl-3">me</span><span class="hl-1">, </span><span class="hl-3">proposalId:</span><span class="hl-1"> </span><span class="hl-8">12</span><span class="hl-5">n</span><span class="hl-1"> });</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">xdr</span><span class="hl-1"> = </span><span class="hl-3">tx</span><span class="hl-1">.</span><span class="hl-0">toXDR</span><span class="hl-1">(); </span><span class="hl-4">// hand to any signer</span><br/><span class="hl-4">// … later …</span><br/><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">tx</span><span class="hl-1">.</span><span class="hl-0">submit</span><span class="hl-1">(</span><span class="hl-3">signedXdr</span><span class="hl-1">); </span><span class="hl-4">// verifies it is the same transaction</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="relayers-and-sponsored-fees" class="tsd-anchor-link">Relayers and sponsored fees<a href="#relayers-and-sponsored-fees" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Another account can pay the fee while the member only authorizes the call.
+Preparation lists who still has to authorize; each of them signs an
+authorization entry, then the fee payer signs the transaction:</p>
+<pre><code class="ts"><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">tx</span><span class="hl-1"> = </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">safe</span><span class="hl-1">.</span><span class="hl-0">approvePayment</span><span class="hl-1">(</span><br/><span class="hl-1">  { </span><span class="hl-3">approver:</span><span class="hl-1"> </span><span class="hl-3">memberAddress</span><span class="hl-1">, </span><span class="hl-3">proposalId:</span><span class="hl-1"> </span><span class="hl-8">12</span><span class="hl-5">n</span><span class="hl-1"> },</span><br/><span class="hl-1">  { </span><span class="hl-3">source:</span><span class="hl-1"> </span><span class="hl-3">relayerAddress</span><span class="hl-1"> }, </span><span class="hl-4">// relayer pays</span><br/><span class="hl-1">);</span><br/><span class="hl-3">tx</span><span class="hl-1">.</span><span class="hl-3">authRequired</span><span class="hl-1">; </span><span class="hl-4">// [memberAddress]</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">authorized</span><span class="hl-1"> = </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">tx</span><span class="hl-1">.</span><span class="hl-0">signAuthEntries</span><span class="hl-1">(</span><span class="hl-3">memberWallet</span><span class="hl-1">); </span><span class="hl-4">// SEP-43 signAuthEntry</span><br/><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">authorized</span><span class="hl-1">.</span><span class="hl-0">signAndSubmit</span><span class="hl-1">(</span><span class="hl-3">relayerSigner</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>signAuthEntries</code> re-simulates with the signatures enforced, so fees stay
+accurate. <code>sign()</code> refuses to run while <code>authRequired</code> is non-empty.</p>
+<h2 id="deploying-a-treasury" class="tsd-anchor-link">Deploying a treasury<a href="#deploying-a-treasury" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Setup runs in the contract constructor, in the same transaction as the
+deployment, so nobody can claim a treasury between deploy and setup.</p>
+<pre><code class="ts"><span class="hl-6">import</span><span class="hl-1"> { </span><span class="hl-3">monthlyPeriod</span><span class="hl-1">, </span><span class="hl-3">parseAmount</span><span class="hl-1"> } </span><span class="hl-6">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@stellarsafe/sdk&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">// Once per network (uploading identical wasm again is harmless):</span><br/><span class="hl-5">const</span><span class="hl-1"> { </span><span class="hl-3">result</span><span class="hl-1">: </span><span class="hl-7">wasmHash</span><span class="hl-1"> } = </span><span class="hl-6">await</span><span class="hl-1"> (</span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">client</span><span class="hl-1">.</span><span class="hl-0">uploadWasm</span><span class="hl-1">(</span><span class="hl-3">wasm</span><span class="hl-1">, { </span><span class="hl-3">source:</span><span class="hl-1"> </span><span class="hl-3">me</span><span class="hl-1"> })).</span><span class="hl-0">signAndSubmit</span><span class="hl-1">(</span><br/><span class="hl-1">  </span><span class="hl-3">wallet</span><span class="hl-1">,</span><br/><span class="hl-1">);</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> { </span><span class="hl-7">closeTime</span><span class="hl-1"> } = </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">client</span><span class="hl-1">.</span><span class="hl-0">getLedgerTime</span><span class="hl-1">();</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">tx</span><span class="hl-1"> = </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">client</span><span class="hl-1">.</span><span class="hl-0">deployTreasury</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-3">wasmHash</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-3">admin:</span><span class="hl-1"> </span><span class="hl-3">me</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-3">name:</span><span class="hl-1"> </span><span class="hl-2">&quot;Acme Ops&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-3">members:</span><span class="hl-1"> [</span><br/><span class="hl-1">    { </span><span class="hl-3">address:</span><span class="hl-1"> </span><span class="hl-3">cfo</span><span class="hl-1">, </span><span class="hl-3">role:</span><span class="hl-1"> </span><span class="hl-2">&quot;Approver&quot;</span><span class="hl-1"> },</span><br/><span class="hl-1">    { </span><span class="hl-3">address:</span><span class="hl-1"> </span><span class="hl-3">ops</span><span class="hl-1">, </span><span class="hl-3">role:</span><span class="hl-1"> </span><span class="hl-2">&quot;Proposer&quot;</span><span class="hl-1"> },</span><br/><span class="hl-1">  ],</span><br/><span class="hl-1">  </span><span class="hl-3">policy:</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-3">defaultApprovals:</span><span class="hl-1"> </span><span class="hl-8">1</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-3">thresholds:</span><span class="hl-1"> [{ </span><span class="hl-3">minAmount:</span><span class="hl-1"> </span><span class="hl-0">parseAmount</span><span class="hl-1">(</span><span class="hl-2">&quot;500&quot;</span><span class="hl-1">), </span><span class="hl-3">approvals:</span><span class="hl-1"> </span><span class="hl-8">2</span><span class="hl-1"> }],</span><br/><span class="hl-1">    </span><span class="hl-3">recipientAllowlistEnabled:</span><span class="hl-1"> </span><span class="hl-5">true</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-3">allowedRecipients:</span><span class="hl-1"> [</span><span class="hl-3">vendor</span><span class="hl-1">],</span><br/><span class="hl-1">    </span><span class="hl-3">allowedTokens:</span><span class="hl-1"> [</span><span class="hl-7">USDC</span><span class="hl-1">],</span><br/><span class="hl-1">    </span><span class="hl-3">departmentLimits:</span><span class="hl-1"> [{ </span><span class="hl-3">department:</span><span class="hl-1"> </span><span class="hl-2">&quot;ops&quot;</span><span class="hl-1">, </span><span class="hl-3">token:</span><span class="hl-1"> </span><span class="hl-7">USDC</span><span class="hl-1">, </span><span class="hl-3">limit:</span><span class="hl-1"> </span><span class="hl-0">parseAmount</span><span class="hl-1">(</span><span class="hl-2">&quot;10000&quot;</span><span class="hl-1">) }],</span><br/><span class="hl-1">    </span><span class="hl-3">period:</span><span class="hl-1"> </span><span class="hl-0">monthlyPeriod</span><span class="hl-1">(</span><span class="hl-3">closeTime</span><span class="hl-1">), </span><span class="hl-4">// 30-day windows</span><br/><span class="hl-1">    </span><span class="hl-3">maxProposalTtl:</span><span class="hl-1"> </span><span class="hl-8">7</span><span class="hl-5">n</span><span class="hl-1"> * </span><span class="hl-8">86_400</span><span class="hl-5">n</span><span class="hl-1">,</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">});</span><br/><span class="hl-5">const</span><span class="hl-1"> { </span><span class="hl-3">result</span><span class="hl-1">: </span><span class="hl-7">treasuryId</span><span class="hl-1"> } = </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">tx</span><span class="hl-1">.</span><span class="hl-0">signAndSubmit</span><span class="hl-1">(</span><span class="hl-3">wallet</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>The policy is validated locally first (for example, thresholds must be
+reachable by the initial approvers).</p>
+<h3 id="archived-state" class="tsd-anchor-link">Archived state<a href="#archived-state" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Soroban archives contract data that is not touched for a long time. If a call
+hits archived state, the SDK throws <code>RestoreRequiredError</code>; restore and retry:</p>
+<pre><code class="ts"><span class="hl-6">try</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">safe</span><span class="hl-1">.</span><span class="hl-0">getPolicy</span><span class="hl-1">();</span><br/><span class="hl-1">} </span><span class="hl-6">catch</span><span class="hl-1"> (</span><span class="hl-3">err</span><span class="hl-1">) {</span><br/><span class="hl-1">  </span><span class="hl-6">if</span><span class="hl-1"> (</span><span class="hl-3">err</span><span class="hl-1"> </span><span class="hl-5">instanceof</span><span class="hl-1"> </span><span class="hl-9">RestoreRequiredError</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-6">await</span><span class="hl-1"> (</span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">client</span><span class="hl-1">.</span><span class="hl-0">prepareRestore</span><span class="hl-1">(</span><span class="hl-3">err</span><span class="hl-1">, { </span><span class="hl-3">source:</span><span class="hl-1"> </span><span class="hl-3">me</span><span class="hl-1"> })).</span><span class="hl-0">signAndSubmit</span><span class="hl-1">(</span><span class="hl-3">wallet</span><span class="hl-1">);</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="wallets-and-signers" class="tsd-anchor-link">Wallets and signers<a href="#wallets-and-signers" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Any object with <code>address</code> and a SEP-43 <code>signTransaction</code> works — Freighter,
+<a href="https://stellarwalletskit.dev">Stellar Wallets Kit</a>, or <code>@stellar/stellar-sdk</code>'s
+<code>contract.Signer</code>:</p>
+<pre><code class="ts"><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">signer</span><span class="hl-1"> = {</span><br/><span class="hl-1">  </span><span class="hl-3">address:</span><span class="hl-1"> </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">kit</span><span class="hl-1">.</span><span class="hl-0">getAddress</span><span class="hl-1">().</span><span class="hl-0">then</span><span class="hl-1">((</span><span class="hl-3">a</span><span class="hl-1">) </span><span class="hl-5">=&gt;</span><span class="hl-1"> </span><span class="hl-3">a</span><span class="hl-1">.</span><span class="hl-3">address</span><span class="hl-1">),</span><br/><span class="hl-1">  </span><span class="hl-0">signTransaction</span><span class="hl-3">:</span><span class="hl-1"> (</span><span class="hl-3">xdr</span><span class="hl-1">, </span><span class="hl-3">opts</span><span class="hl-1">) </span><span class="hl-5">=&gt;</span><span class="hl-1"> </span><span class="hl-3">kit</span><span class="hl-1">.</span><span class="hl-0">signTransaction</span><span class="hl-1">(</span><span class="hl-3">xdr</span><span class="hl-1">, </span><span class="hl-3">opts</span><span class="hl-1">),</span><br/><span class="hl-1">};</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Before submitting, the SDK checks that the wallet returned <strong>the same
+transaction</strong> (identical hash) with a new signature, so a misbehaving wallet
+cannot swap in a different payment.</p>
+<p>To authorize as a member while someone else pays fees, the signer also needs
+SEP-43 <code>signAuthEntry</code> (Freighter provides it).</p>
+<p><code>keypairSigner(secret)</code> is provided for servers, scripts and tests. It
+implements both methods and refuses to sign authorizations for another network.</p>
+<h2 id="policy-helpers" class="tsd-anchor-link">Policy helpers<a href="#policy-helpers" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Pure functions that mirror the contract's rules, so UIs can explain a
+failure before the user pays a fee. They are advisory — the contract decides.</p>
+<pre><code class="ts"><span class="hl-6">import</span><span class="hl-1"> { </span><span class="hl-3">checkPayment</span><span class="hl-1">, </span><span class="hl-3">getProposalState</span><span class="hl-1">, </span><span class="hl-3">requiredApprovals</span><span class="hl-1">, </span><span class="hl-3">periodBounds</span><span class="hl-1"> } </span><span class="hl-6">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@stellarsafe/sdk&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> { </span><span class="hl-7">policy</span><span class="hl-1">, </span><span class="hl-7">members</span><span class="hl-1">, </span><span class="hl-7">pendingProposals</span><span class="hl-1"> } = </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">client</span><span class="hl-1">.</span><span class="hl-0">getTreasury</span><span class="hl-1">(</span><span class="hl-3">id</span><span class="hl-1">);</span><br/><span class="hl-5">const</span><span class="hl-1"> { </span><span class="hl-3">closeTime</span><span class="hl-1">: </span><span class="hl-7">now</span><span class="hl-1"> } = </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">client</span><span class="hl-1">.</span><span class="hl-0">getLedgerTime</span><span class="hl-1">();</span><br/><br/><span class="hl-0">requiredApprovals</span><span class="hl-1">(</span><span class="hl-3">policy</span><span class="hl-1">, </span><span class="hl-0">parseAmount</span><span class="hl-1">(</span><span class="hl-2">&quot;750&quot;</span><span class="hl-1">)); </span><span class="hl-4">// → 2</span><br/><span class="hl-0">checkPayment</span><span class="hl-1">(</span><span class="hl-3">policy</span><span class="hl-1">, </span><span class="hl-3">request</span><span class="hl-1">, { </span><span class="hl-3">now</span><span class="hl-1">, </span><span class="hl-3">spent</span><span class="hl-1"> }); </span><span class="hl-4">// → [{ code: &quot;RecipientNotAllowed&quot;, message }]</span><br/><span class="hl-0">getProposalState</span><span class="hl-1">(</span><span class="hl-3">proposal</span><span class="hl-1">, </span><span class="hl-3">now</span><span class="hl-1">, </span><span class="hl-3">policy</span><span class="hl-1">.</span><span class="hl-3">version</span><span class="hl-1">); </span><span class="hl-4">// &quot;pending&quot; | &quot;ready&quot; | &quot;stale&quot; | &quot;expired&quot; | …</span><br/><span class="hl-0">periodBounds</span><span class="hl-1">(</span><span class="hl-3">policy</span><span class="hl-1">.</span><span class="hl-3">period</span><span class="hl-1">, </span><span class="hl-3">now</span><span class="hl-1">); </span><span class="hl-4">// { index, start, end } of the spending period</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Use <strong>ledger time</strong> (<code>getLedgerTime().closeTime</code>) for <code>now</code>, not <code>Date.now()</code>.</p>
+<h2 id="events" class="tsd-anchor-link">Events<a href="#events" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="ts"><span class="hl-4">// One page</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">page</span><span class="hl-1"> = </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-3">client</span><span class="hl-1">.</span><span class="hl-0">getEvents</span><span class="hl-1">({ </span><span class="hl-3">contractIds:</span><span class="hl-1"> [</span><span class="hl-3">id</span><span class="hl-1">], </span><span class="hl-3">startLedger:</span><span class="hl-1"> </span><span class="hl-8">1_000_000</span><span class="hl-1"> });</span><br/><br/><span class="hl-4">// Continuous stream, resumable by cursor</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">ac</span><span class="hl-1"> = </span><span class="hl-5">new</span><span class="hl-1"> </span><span class="hl-0">AbortController</span><span class="hl-1">();</span><br/><span class="hl-6">for</span><span class="hl-1"> </span><span class="hl-6">await</span><span class="hl-1"> (</span><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">event</span><span class="hl-1"> </span><span class="hl-5">of</span><span class="hl-1"> </span><span class="hl-3">client</span><span class="hl-1">.</span><span class="hl-0">streamEvents</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-3">contractIds:</span><span class="hl-1"> [</span><span class="hl-3">id</span><span class="hl-1">],</span><br/><span class="hl-1">  </span><span class="hl-3">startLedger</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-3">signal:</span><span class="hl-1"> </span><span class="hl-3">ac</span><span class="hl-1">.</span><span class="hl-3">signal</span><span class="hl-1">,</span><br/><span class="hl-1">})) {</span><br/><span class="hl-1">  </span><span class="hl-6">switch</span><span class="hl-1"> (</span><span class="hl-3">event</span><span class="hl-1">.</span><span class="hl-3">type</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-6">case</span><span class="hl-1"> </span><span class="hl-2">&quot;approved&quot;</span><span class="hl-1">:</span><br/><span class="hl-1">      </span><span class="hl-3">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`</span><span class="hl-5">${</span><span class="hl-3">event</span><span class="hl-10">.</span><span class="hl-3">data</span><span class="hl-10">.</span><span class="hl-3">approver</span><span class="hl-5">}</span><span class="hl-2"> approved #</span><span class="hl-5">${</span><span class="hl-3">event</span><span class="hl-10">.</span><span class="hl-3">data</span><span class="hl-10">.</span><span class="hl-3">proposalId</span><span class="hl-5">}</span><span class="hl-2">`</span><span class="hl-1">);</span><br/><span class="hl-1">      </span><span class="hl-6">break</span><span class="hl-1">;</span><br/><span class="hl-1">    </span><span class="hl-6">case</span><span class="hl-1"> </span><span class="hl-2">&quot;executed&quot;</span><span class="hl-1">:</span><br/><span class="hl-1">      </span><span class="hl-3">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`paid </span><span class="hl-5">${</span><span class="hl-3">event</span><span class="hl-10">.</span><span class="hl-3">data</span><span class="hl-10">.</span><span class="hl-3">amount</span><span class="hl-5">}</span><span class="hl-2"> to </span><span class="hl-5">${</span><span class="hl-3">event</span><span class="hl-10">.</span><span class="hl-3">data</span><span class="hl-10">.</span><span class="hl-3">recipient</span><span class="hl-5">}</span><span class="hl-2">`</span><span class="hl-1">, </span><span class="hl-3">event</span><span class="hl-1">.</span><span class="hl-3">meta</span><span class="hl-1">.</span><span class="hl-3">txHash</span><span class="hl-1">);</span><br/><span class="hl-1">      </span><span class="hl-6">break</span><span class="hl-1">;</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Events are a typed discriminated union: <code>event.data</code> is narrowed by
+<code>event.type</code>. <code>decodeEvent()</code> is exported for decoding events from other
+sources. Unknown or non-StellarSafe events are skipped, so indexers keep
+working when the contract adds new event types.</p>
+<h2 id="amounts" class="tsd-anchor-link">Amounts<a href="#amounts" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Token amounts are <code>bigint</code> in the token's smallest unit, exactly as on-chain.
+Convert with exact string arithmetic — never floats:</p>
+<pre><code class="ts"><span class="hl-0">parseAmount</span><span class="hl-1">(</span><span class="hl-2">&quot;500.25&quot;</span><span class="hl-1">, </span><span class="hl-8">7</span><span class="hl-1">); </span><span class="hl-4">// 5_002_500_000n</span><br/><span class="hl-0">formatAmount</span><span class="hl-1">(</span><span class="hl-8">5_002_500_000</span><span class="hl-5">n</span><span class="hl-1">, </span><span class="hl-8">7</span><span class="hl-1">); </span><span class="hl-4">// &quot;500.25&quot;</span><br/><span class="hl-0">parseAmount</span><span class="hl-1">(</span><span class="hl-2">&quot;0.00000001&quot;</span><span class="hl-1">, </span><span class="hl-8">7</span><span class="hl-1">); </span><span class="hl-4">// throws: too many decimal places (no silent rounding)</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="errors" class="tsd-anchor-link">Errors<a href="#errors" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Everything the SDK throws is a <code>StellarSafeError</code> with a stable <code>code</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th><code>code</code></th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ValidationError</code></td>
+<td><code>INVALID_ARGUMENT</code></td>
+<td>Bad input, caught before any network call</td>
+</tr>
+<tr>
+<td><code>ContractError</code></td>
+<td><code>CONTRACT_ERROR</code></td>
+<td>The contract rejected the call; see <code>contractErrorName</code></td>
+</tr>
+<tr>
+<td><code>SimulationError</code></td>
+<td><code>SIMULATION_FAILED</code></td>
+<td>Simulation failed for another reason</td>
+</tr>
+<tr>
+<td><code>RestoreRequiredError</code></td>
+<td><code>RESTORE_REQUIRED</code></td>
+<td>Contract state is archived and must be restored</td>
+</tr>
+<tr>
+<td><code>TransactionError</code></td>
+<td><code>SUBMISSION_FAILED</code>, <code>TRANSACTION_FAILED</code>, <code>TRANSACTION_TIMEOUT</code></td>
+<td>Includes <code>hash</code></td>
+</tr>
+<tr>
+<td><code>RpcError</code></td>
+<td><code>RPC_ERROR</code></td>
+<td>RPC unreachable after retries</td>
+</tr>
+<tr>
+<td><code>DecodeError</code></td>
+<td><code>DECODE_ERROR</code></td>
+<td>Contract returned data that does not match the interface</td>
+</tr>
+<tr>
+<td><code>StellarSafeError</code></td>
+<td><code>SIGNING_FAILED</code>, <code>NETWORK_MISMATCH</code>, <code>AUTH_REQUIRED</code>, <code>INVALID_CONFIG</code>, <code>ABORTED</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>A <code>TRANSACTION_TIMEOUT</code> means the transaction <em>may still land</em>: check its
+status by hash before resubmitting.</p>
+<p>Use <code>describeContractError</code> to get the user-facing description by contract error
+name or numeric code. <code>CONTRACT_ERROR_DESCRIPTIONS</code> exposes the complete
+read-only mapping for interfaces that need to display or list every error:</p>
+<pre><code class="ts"><span class="hl-6">import</span><span class="hl-1"> { </span><span class="hl-3">describeContractError</span><span class="hl-1"> } </span><span class="hl-6">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@stellarsafe/sdk&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-0">describeContractError</span><span class="hl-1">(</span><span class="hl-2">&quot;InsufficientApprovals&quot;</span><span class="hl-1">);</span><br/><span class="hl-4">// &quot;The proposal does not have enough valid approvals.&quot;</span><br/><span class="hl-0">describeContractError</span><span class="hl-1">(</span><span class="hl-8">11</span><span class="hl-1">); </span><span class="hl-4">// the same description</span><br/><span class="hl-0">describeContractError</span><span class="hl-1">(</span><span class="hl-8">999</span><span class="hl-1">); </span><span class="hl-4">// generic message for a newer contract error</span>
+</code><button type="button">Copy</button></pre>
+
+<p>If state changes between simulation and inclusion (for example another
+approver executed first), the transaction fails on-chain. When the RPC
+reports the cause, <code>err.contractError</code> holds it:</p>
+<pre><code class="ts"><span class="hl-6">catch</span><span class="hl-1"> (</span><span class="hl-3">err</span><span class="hl-1">) {</span><br/><span class="hl-1">  </span><span class="hl-6">if</span><span class="hl-1"> (</span><span class="hl-3">err</span><span class="hl-1"> </span><span class="hl-5">instanceof</span><span class="hl-1"> </span><span class="hl-9">TransactionError</span><span class="hl-1"> &amp;&amp; </span><span class="hl-3">err</span><span class="hl-1">.</span><span class="hl-3">contractError</span><span class="hl-1">?.</span><span class="hl-0">is</span><span class="hl-1">(</span><span class="hl-2">&quot;ProposalNotPending&quot;</span><span class="hl-1">)) { … }</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="configuration" class="tsd-anchor-link">Configuration<a href="#configuration" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="ts"><span class="hl-5">new</span><span class="hl-1"> </span><span class="hl-0">StellarSafeClient</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-3">network:</span><span class="hl-1"> </span><span class="hl-2">&quot;testnet&quot;</span><span class="hl-1">, </span><span class="hl-4">// &quot;testnet&quot; | &quot;mainnet&quot; | &quot;futurenet&quot; | &quot;local&quot; | &quot;custom&quot;</span><br/><span class="hl-1">  </span><span class="hl-3">rpcUrl:</span><span class="hl-1"> </span><span class="hl-2">&quot;https://…&quot;</span><span class="hl-1">, </span><span class="hl-4">// required for mainnet and custom</span><br/><span class="hl-1">  </span><span class="hl-3">networkPassphrase:</span><span class="hl-1"> </span><span class="hl-2">&quot;…&quot;</span><span class="hl-1">, </span><span class="hl-4">// required for custom</span><br/><span class="hl-1">  </span><span class="hl-3">headers:</span><span class="hl-1"> { </span><span class="hl-3">Authorization:</span><span class="hl-1"> </span><span class="hl-2">&quot;Bearer …&quot;</span><span class="hl-1"> },</span><br/><span class="hl-1">  </span><span class="hl-3">timeoutMs:</span><span class="hl-1"> </span><span class="hl-8">30_000</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-3">retry:</span><span class="hl-1"> { </span><span class="hl-3">retries:</span><span class="hl-1"> </span><span class="hl-8">3</span><span class="hl-1">, </span><span class="hl-3">baseDelayMs:</span><span class="hl-1"> </span><span class="hl-8">250</span><span class="hl-1">, </span><span class="hl-3">maxDelayMs:</span><span class="hl-1"> </span><span class="hl-8">5_000</span><span class="hl-1"> },</span><br/><span class="hl-1">  </span><span class="hl-3">allowHttp:</span><span class="hl-1"> </span><span class="hl-5">false</span><span class="hl-1">, </span><span class="hl-4">// only for local development</span><br/><span class="hl-1">  </span><span class="hl-3">rpc:</span><span class="hl-1"> </span><span class="hl-3">myRpcServer</span><span class="hl-1">, </span><span class="hl-4">// bring your own rpc.Server (or a test double)</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<p><strong>Read-your-writes.</strong> Public RPC endpoints are load-balanced, so a read
+right after a write can reach a node that is a ledger behind. After a client
+confirms one of its transactions, its later reads and simulations wait until
+the RPC has caught up to that ledger, and it never reuses an account sequence
+number a lagging node reports. For writes made elsewhere (another client, a
+backend), pass the ledger explicitly: <code>safe.getProposal(id, { minLedger })</code>.</p>
+<p>Transient RPC failures (network errors, 429, 5xx) are retried with
+exponential backoff and jitter. Before the first write the client checks the
+RPC server's network passphrase matches its configuration.</p>
+<p>All network methods accept an <code>AbortSignal</code>.</p>
+<h2 id="security-model" class="tsd-anchor-link">Security model<a href="#security-model" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><strong>The contract is the authority.</strong> The SDK never treats local checks,
+backend records or simulation as final. Only a confirmed transaction is.</li>
+<li><strong>No key custody.</strong> The SDK never asks for secret keys except through the
+optional <code>keypairSigner</code> helper for server-side use.</li>
+<li><strong>Signed-transaction integrity.</strong> Signed envelopes are verified against the
+prepared transaction hash before submission.</li>
+<li><strong>Network pinning.</strong> Writes are refused if the RPC server is on a different
+network than configured. <code>http://</code> RPC URLs are refused unless opted in.</li>
+<li><strong>Strict decoding.</strong> Contract responses are validated field-by-field.</li>
+</ul>
+<p>See <a href="media/SECURITY.md">SECURITY.md</a> for reporting vulnerabilities and the SDK
+threat model, and <a href="media/CONTRACT_INTERFACE.md">docs/CONTRACT_INTERFACE.md</a>
+for the contract interface the SDK targets.</p>
+<h2 id="development" class="tsd-anchor-link">Development<a href="#development" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">ci</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">ci</span><span class="hl-1">          </span><span class="hl-4"># lint, typecheck, unit tests with coverage, build, package checks</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1">            </span><span class="hl-4"># unit tests</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">docs</span><span class="hl-1">        </span><span class="hl-4"># API reference into docs/api</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="how-the-sdk-is-tested" class="tsd-anchor-link">How the SDK is tested<a href="#how-the-sdk-is-tested" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>Unit tests</strong> (<code>npm test</code>) run offline against a fake RPC server, with ≥ 95% coverage.</li>
+<li><strong>Contract conformance</strong> (<code>test/unit/contract-spec.test.ts</code>) reads the interface
+spec embedded in the real contract build (<code>test/fixtures/stellarsafe_treasury.wasm</code>)
+and checks every SDK call, argument encoding, return type, error code and
+event against it. Contract/SDK drift fails CI.</li>
+<li><strong>End-to-end</strong> (<code>npm run test:e2e</code>) deploys the contract to <strong>testnet</strong> with
+fresh friendbot-funded accounts and runs the full lifecycle: deploy, fund,
+propose, approve, execute, double-execution, thresholds, roles, allowlists,
+spending limits, expiry bounds, revocation, policy-version voiding, member
+removal, relayed fees and event indexing. It needs no secrets.</li>
+<li><strong>Browser bundle</strong> (<code>npm run check:browser</code>) ensures no Node-only imports.</li>
+</ul>
+<p>To check a treasury you already deployed (read-only):</p>
+<pre><code class="sh"><span class="hl-3">STELLARSAFE_TREASURY_ID</span><span class="hl-1">=</span><span class="hl-2">C…</span><span class="hl-1"> </span><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">test:integration</span>
+</code><button type="button">Copy</button></pre>
+
+<p>See <a href="media/CONTRIBUTING.md">CONTRIBUTING.md</a>. Runnable examples live in
+<a href="https://github.com/stellarsafe-labs/stellarsafe-sdk/tree/main/examples"><code>examples/</code></a>.</p>
+<h2 id="license" class="tsd-anchor-link">License<a href="#license" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p><a href="media/LICENSE">Apache-2.0</a></p>
+<h2 id="contributing" class="tsd-anchor-link">Contributing<a href="#contributing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Contributions are welcome. Issues labelled
+<a href="https://github.com/stellarsafe-labs/stellarsafe-sdk/labels/good%20first%20issue"><code>good first issue</code></a>
+and <a href="https://github.com/stellarsafe-labs/stellarsafe-sdk/labels/help%20wanted"><code>help wanted</code></a>
+each come with context, acceptance criteria and a suggested complexity.
+Read <a href="media/CONTRIBUTING.md">CONTRIBUTING.md</a> for setup and how to claim an issue, and
+<a href="media/CODE_OF_CONDUCT.md">CODE_OF_CONDUCT.md</a> for community expectations.</p>
+</div></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>On This Page</h3></summary>
+<div class="tsd-accordion-details"><a href="#stellarsafesdk"><span>@stellarsafe/sdk</span></a>
+<ul>
+<li><a href="#live-demo-on-testnet"><span>Live demo on testnet</span></a></li>
+<li><a href="#contents"><span>Contents</span></a></li>
+<li><a href="#install"><span>Install</span></a></li>
+<li><a href="#quick-start"><span>Quick start</span></a></li>
+<li><a href="#reading-a-treasury"><span>Reading a treasury</span></a></li>
+<li><a href="#writing-prepare-→-sign-→-submit"><span>Writing: prepare → sign → submit</span></a></li>
+<li>
+<ul>
+<li><a href="#bound-signer"><span>Bound signer</span></a></li>
+<li><a href="#external-or-multisig-signing"><span>External or multisig signing</span></a></li>
+<li><a href="#relayers-and-sponsored-fees"><span>Relayers and sponsored fees</span></a></li></ul></li>
+<li><a href="#deploying-a-treasury"><span>Deploying a treasury</span></a></li>
+<li>
+<ul>
+<li><a href="#archived-state"><span>Archived state</span></a></li></ul></li>
+<li><a href="#wallets-and-signers"><span>Wallets and signers</span></a></li>
+<li><a href="#policy-helpers"><span>Policy helpers</span></a></li>
+<li><a href="#events"><span>Events</span></a></li>
+<li><a href="#amounts"><span>Amounts</span></a></li>
+<li><a href="#errors"><span>Errors</span></a></li>
+<li><a href="#configuration"><span>Configuration</span></a></li>
+<li><a href="#security-model"><span>Security model</span></a></li>
+<li><a href="#development"><span>Development</span></a></li>
+<li>
+<ul>
+<li><a href="#how-the-sdk-is-tested"><span>How the <wbr/>SDK is tested</span></a></li></ul></li>
+<li><a href="#license"><span>License</span></a></li>
+<li><a href="#contributing"><span>Contributing</span></a></li></ul></div></details></div>
+<div class="site-menu">
+<nav class="tsd-navigation"><a href="modules.html">@stellarsafe/sdk</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>Loading...</li></ul></nav></div></div></div><footer>
+<p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>
+<div class="overlay"></div></body></html>
