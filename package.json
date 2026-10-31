@@ -1,6 +1,6 @@
 {
   "name": "@stellarsafe/sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "TypeScript SDK for StellarSafe \u2014 typed clients for the StellarSafe treasury, policy and approval contracts on Stellar/Soroban.",
   "license": "Apache-2.0",
   "author": "StellarSafe Labs",
