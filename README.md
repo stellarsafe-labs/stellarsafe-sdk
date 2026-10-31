@@ -8,7 +8,6 @@ app, not just the StellarSafe dashboard, read policies, prepare and simulate
 payments, sign with any Stellar wallet and index contract events.
 
 [![CI](https://github.com/stellarsafe-labs/stellarsafe-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/stellarsafe-labs/stellarsafe-sdk/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/@stellarsafe/sdk.svg)](https://www.npmjs.com/package/@stellarsafe/sdk)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 > **Status: pre-1.0, testnet only.** The StellarSafe contracts have not been
@@ -51,8 +50,21 @@ Testnet is reset periodically; rerun `node scripts/demo-testnet.ts` to recreate 
 - [Configuration](#configuration)
 - [Security model](#security-model)
 - [Development](#development)
+- [Contributing](#contributing)
 
 ## Install
+
+> **Not on npm yet.** The first release will be published as `@stellarsafe/sdk`.
+> Until then, build it from source:
+>
+> ```sh
+> git clone https://github.com/stellarsafe-labs/stellarsafe-sdk
+> cd stellarsafe-sdk && npm ci && npm run build && npm pack
+> # in your app:
+> npm install /path/to/stellarsafe-sdk/stellarsafe-sdk-*.tgz
+> ```
+
+Once published:
 
 ```sh
 npm install @stellarsafe/sdk
@@ -436,3 +448,12 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Runnable examples live in
 ## License
 
 [Apache-2.0](LICENSE)
+
+## Contributing
+
+Contributions are welcome. Issues labelled
+[`good first issue`](https://github.com/stellarsafe-labs/stellarsafe-sdk/labels/good%20first%20issue)
+and [`help wanted`](https://github.com/stellarsafe-labs/stellarsafe-sdk/labels/help%20wanted)
+each come with context, acceptance criteria and a suggested complexity.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup and how to claim an issue, and
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community expectations.
