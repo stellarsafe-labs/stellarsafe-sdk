@@ -40,6 +40,9 @@ jobs:
           NPM_CONFIG_PROVENANCE: "true"
       - name: Version PR only (npm publishing not configured)
         if: env.CAN_PUBLISH != 'true'
+        # Opening the PR needs "Allow GitHub Actions to create and approve pull requests"
+        # (org + repo settings). Until that is allowed, don't fail the release run over it.
+        continue-on-error: true
         uses: changesets/action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
