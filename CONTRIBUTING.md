@@ -66,7 +66,19 @@ into version bumps and changelog entries.
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org)
 (`feat:`, `fix:`, `docs:`, `test:`, `chore:`).
 
-## Good first issues
+## Picking up an issue
 
-Look for the `good first issue` and `help wanted` labels. Each issue lists
-acceptance criteria and a definition of done.
+1. Look for the `good first issue` and `help wanted` labels. Each issue lists
+   context, acceptance criteria, a definition of done and a suggested complexity.
+2. Comment on the issue to ask for it, with a sentence or two on your approach.
+   Wait to be assigned before starting so two people don't build the same thing.
+3. Open a draft PR early if you want feedback. Link the issue with `Closes #<number>`.
+4. If an assigned issue has no activity for 7 days, we may unassign it so
+   someone else can pick it up. Just comment if you need more time.
+
+Maintainers aim to reply to issue comments and review PRs within 3 working days.
+
+## Code of conduct
+
+Everyone taking part in this project is expected to follow the
+[Code of Conduct](CODE_OF_CONDUCT.md).
