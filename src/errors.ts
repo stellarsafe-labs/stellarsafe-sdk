@@ -91,34 +91,33 @@ export type ContractErrorName = keyof typeof ContractErrorCode;
  *
  * The mapping is frozen so callers can safely share it with user interfaces.
  */
-export const CONTRACT_ERROR_DESCRIPTIONS: Readonly<
-  Record<ContractErrorName, string>
-> = Object.freeze({
-  AlreadyInitialized: "The treasury has already been initialized.",
-  NotInitialized: "The treasury has not been initialized.",
-  Unauthorized: "The caller does not have the role required for this action.",
-  NotMember: "The address is not a member of this treasury.",
-  MemberAlreadyExists: "The address is already a member of this treasury.",
-  ProposalNotFound: "No proposal exists with this id.",
-  ProposalNotPending: "The proposal is not pending (already executed or cancelled).",
-  ProposalExpired: "The proposal's approval window has expired.",
-  AlreadyApproved: "This member has already approved the proposal.",
-  NotApproved: "This member has not approved the proposal.",
-  InsufficientApprovals: "The proposal does not have enough valid approvals.",
-  RecipientNotAllowed: "The recipient is not on the treasury's allowlist.",
-  SpendingLimitExceeded:
-    "The payment would exceed the department's spending limit for this period.",
-  PolicyVersionMismatch:
-    "The policy changed after the proposal was created; its approvals are void.",
-  InvalidAmount: "The amount must be a positive integer.",
-  InvalidPolicy: "The policy configuration is invalid.",
-  InvalidExpiry: "The expiry is in the past or exceeds the policy's maximum proposal lifetime.",
-  LastAdmin: "Cannot remove or demote the last admin of the treasury.",
-  InsufficientBalance: "The treasury does not hold enough of this token.",
-  TokenNotAllowed: "The token is not enabled in the treasury policy.",
-  MemoTooLong: "The memo or name is longer than 256 bytes.",
-  TooManyPending: "The treasury has too many pending proposals; execute or cancel some first.",
-});
+export const CONTRACT_ERROR_DESCRIPTIONS: Readonly<Record<ContractErrorName, string>> =
+  Object.freeze({
+    AlreadyInitialized: "The treasury has already been initialized.",
+    NotInitialized: "The treasury has not been initialized.",
+    Unauthorized: "The caller does not have the role required for this action.",
+    NotMember: "The address is not a member of this treasury.",
+    MemberAlreadyExists: "The address is already a member of this treasury.",
+    ProposalNotFound: "No proposal exists with this id.",
+    ProposalNotPending: "The proposal is not pending (already executed or cancelled).",
+    ProposalExpired: "The proposal's approval window has expired.",
+    AlreadyApproved: "This member has already approved the proposal.",
+    NotApproved: "This member has not approved the proposal.",
+    InsufficientApprovals: "The proposal does not have enough valid approvals.",
+    RecipientNotAllowed: "The recipient is not on the treasury's allowlist.",
+    SpendingLimitExceeded:
+      "The payment would exceed the department's spending limit for this period.",
+    PolicyVersionMismatch:
+      "The policy changed after the proposal was created; its approvals are void.",
+    InvalidAmount: "The amount must be a positive integer.",
+    InvalidPolicy: "The policy configuration is invalid.",
+    InvalidExpiry: "The expiry is in the past or exceeds the policy's maximum proposal lifetime.",
+    LastAdmin: "Cannot remove or demote the last admin of the treasury.",
+    InsufficientBalance: "The treasury does not hold enough of this token.",
+    TokenNotAllowed: "The token is not enabled in the treasury policy.",
+    MemoTooLong: "The memo or name is longer than 256 bytes.",
+    TooManyPending: "The treasury has too many pending proposals; execute or cancel some first.",
+  });
 
 const NAME_BY_CODE = new Map<number, ContractErrorName>(
   (Object.entries(ContractErrorCode) as [ContractErrorName, number][]).map(([name, code]) => [
@@ -133,8 +132,7 @@ const NAME_BY_CODE = new Map<number, ContractErrorName>(
  * Unknown numeric codes use the same fallback message as {@link ContractError}.
  */
 export function describeContractError(nameOrCode: ContractErrorName | number): string {
-  const name =
-    typeof nameOrCode === "number" ? NAME_BY_CODE.get(nameOrCode) : nameOrCode;
+  const name = typeof nameOrCode === "number" ? NAME_BY_CODE.get(nameOrCode) : nameOrCode;
   return name === undefined
     ? `Unknown contract error #${nameOrCode}. The contract may be newer than this SDK.`
     : CONTRACT_ERROR_DESCRIPTIONS[name];
