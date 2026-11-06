@@ -20,7 +20,8 @@ export class ContractFailure {
   constructor(readonly code: number) {}
 }
 
-export type Handler = (args: ScVal[]) => ScVal;
+/** Handles a contract call. `contractId` is the invoked contract, for fakes serving several contracts. */
+export type Handler = (args: ScVal[], contractId: string) => ScVal;
 
 export interface FakeRpcOptions {
   handlers?: Record<string, Handler>;
@@ -33,7 +34,7 @@ export interface FakeRpcOptions {
 }
 
 export interface FakeRpc extends RpcClient {
-  readonly calls: { method: string; args: ScVal[] }[];
+  readonly calls: { method: string; args: ScVal[]; contractId: string }[];
   readonly submitted: (Transaction | FeeBumpTransaction)[];
   handlers: Record<string, Handler>;
   /** Override the next N sendTransaction statuses. */
@@ -97,8 +98,8 @@ export function fakeRpc(opts: FakeRpcOptions = {}): FakeRpc {
     },
 
     async simulateTransaction(tx, _resources, authMode) {
-      const { method, args, invoke, existingAuth } = invocation(tx as Transaction);
-      fake.calls.push({ method, args });
+      const { method, args, invoke, existingAuth, contractId } = invocation(tx as Transaction);
+      fake.calls.push({ method, args, contractId });
       fake.simAuthModes.push(authMode);
       const base = {
         id: "1",
@@ -111,7 +112,7 @@ export function fakeRpc(opts: FakeRpcOptions = {}): FakeRpc {
       if (!handler) return { ...base, error: `HostError: no handler for ${method}` };
       let retval: ScVal;
       try {
-        retval = handler(args);
+        retval = handler(args, contractId);
       } catch (err) {
         if (err instanceof ContractFailure) {
           return { ...base, error: `HostError: Error(Contract, #${err.code})` };
@@ -221,12 +222,15 @@ interface Invocation {
   args: ScVal[];
   invoke?: xdr.InvokeContractArgs;
   existingAuth: number;
+  /** Invoked contract (`C…`), or `""` for non-call host functions. */
+  contractId: string;
 }
 
 /** Name host functions so tests can register handlers: contract method, `__upload`, `__deploy`, `__restore`. */
 function invocation(tx: Transaction): Invocation {
   const op = tx.operations[0];
-  if (op?.type === "restoreFootprint") return { method: "__restore", args: [], existingAuth: 0 };
+  if (op?.type === "restoreFootprint")
+    return { method: "__restore", args: [], existingAuth: 0, contractId: "" };
   if (op?.type !== "invokeHostFunction") throw new Error("unexpected operation");
   const existingAuth = op.auth?.length ?? 0;
   switch (op.func.type) {
@@ -236,11 +240,17 @@ function invocation(tx: Transaction): Invocation {
         args: op.func.invokeContract.args,
         invoke: op.func.invokeContract,
         existingAuth,
+        contractId: Address.fromScAddress(op.func.invokeContract.contractAddress).toString(),
       };
     case "hostFunctionTypeUploadContractWasm":
-      return { method: "__upload", args: [], existingAuth };
+      return { method: "__upload", args: [], existingAuth, contractId: "" };
     case "hostFunctionTypeCreateContractV2":
-      return { method: "__deploy", args: op.func.createContractV2.constructorArgs, existingAuth };
+      return {
+        method: "__deploy",
+        args: op.func.createContractV2.constructorArgs,
+        existingAuth,
+        contractId: "",
+      };
     default:
       throw new Error(`unexpected host function ${op.func.type}`);
   }

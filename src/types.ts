@@ -11,6 +11,8 @@
  * @module
  */
 
+import type { StellarSafeError } from "./errors.js";
+
 /** A Stellar address in strkey form (`G…` or `C…`). */
 export type Address = string;
 
@@ -144,6 +146,28 @@ export interface SpendingStatus {
   readonly remaining: bigint;
 }
 
+/**
+ * Balance of one token held by a treasury, from `TreasuryClient.getBalances`.
+ *
+ * Exactly one of `balance` and `error` is set: a token whose `balance` call
+ * fails (e.g. the contract does not exist or is archived) is reported with the
+ * error instead of failing the whole read.
+ */
+export type TokenBalance =
+  | {
+      /** Token contract address (`C…`). */
+      readonly token: Address;
+      /** Balance in the token's smallest unit (i128 on-chain). */
+      readonly balance: bigint;
+      readonly error?: undefined;
+    }
+  | {
+      readonly token: Address;
+      readonly balance?: undefined;
+      /** Why this token's balance could not be read. */
+      readonly error: StellarSafeError;
+    };
+
 /** Everything needed to render a treasury, read in one call. */
 export interface TreasurySnapshot {
   readonly contractId: Address;
@@ -151,6 +175,8 @@ export interface TreasurySnapshot {
   readonly policy: Policy;
   readonly members: readonly Member[];
   readonly pendingProposals: readonly Proposal[];
+  /** Balances of the tokens named in the policy; see `TreasuryClient.getBalances`. */
+  readonly balances: readonly TokenBalance[];
   /** Ledger sequence the snapshot was simulated against. */
   readonly ledger: number;
 }

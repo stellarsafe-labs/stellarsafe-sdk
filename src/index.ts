@@ -76,7 +76,7 @@ export type {
   TransactionResult,
 } from "./transaction.js";
 export { PreparedTransaction, READ_ONLY_SOURCE } from "./transaction.js";
-export type { ProposalId, ReadOptions, WriteOptions } from "./treasury.js";
+export type { BalanceOptions, ProposalId, ReadOptions, WriteOptions } from "./treasury.js";
 export { ConnectedTreasury, SUPPORTED_INTERFACE_VERSION, TreasuryClient } from "./treasury.js";
 export type * from "./types.js";
 export { ROLES } from "./types.js";
