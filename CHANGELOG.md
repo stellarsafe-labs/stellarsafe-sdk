@@ -1,5 +1,16 @@
 # @stellarsafe/sdk
 
+## 0.2.0
+
+### Minor Changes
+
+- 9739b39: Export readable contract error descriptions and a helper to look them up by name or code.
+- 550b881: Read treasury token balances. `TreasuryClient.getBalances()` returns `{ token, balance }` for every distinct token in the policy's `allowedTokens` and `departmentLimits` (or for the tokens you pass), read in parallel by simulating `balance()` on each token contract. A token whose call fails is reported with an `error` instead of failing the whole read. `TreasurySnapshot` (from `getSnapshot()` / `client.getTreasury()`) gains a `balances` field.
+
+### Patch Changes
+
+- 1f5c343: Fix stale reads after a confirmed write on load-balanced RPC endpoints. Clients now wait for the RPC to reach the ledger of their last write before reading or simulating, never reuse a sequence number from a lagging node, and accept an explicit `minLedger` read option.
+
 ## 0.1.0
 
 Initial release.
