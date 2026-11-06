@@ -292,6 +292,11 @@ cannot swap in a different payment.
 To authorize as a member while someone else pays fees, the signer also needs
 SEP-43 `signAuthEntry` (Freighter provides it).
 
+For a working browser app (Freighter via Stellar Wallets Kit: connect, review
+the fee, sign, handle rejection, relayed fees) see
+[`examples/web`](examples/web). Its adapter is one file,
+[`examples/web/src/wallet.ts`](examples/web/src/wallet.ts).
+
 `keypairSigner(secret)` is provided for servers, scripts and tests. It
 implements both methods and refuses to sign authorizations for another network.
 

@@ -1,0 +1,20 @@
+{
+  "name": "stellarsafe-web-example",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Browser wallet example for @stellarsafe/sdk (Vite + TypeScript, testnet)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@creit.tech/stellar-wallets-kit": "^2.8.0",
+    "@stellarsafe/sdk": "file:../.."
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^8.3.6"
+  }
+}

@@ -4,6 +4,9 @@
  *
  *   npm run build
  *   node examples/deploy-treasury.ts [path/to/stellarsafe_treasury.wasm]
+ *
+ * Set WALLET_MEMBERS=G…,G… to also add your own (e.g. Freighter) testnet
+ * accounts as Approvers, for trying examples/web.
  */
 import { readFileSync } from "node:fs";
 import { Asset, Keypair } from "@stellar/stellar-sdk";
@@ -17,6 +20,11 @@ import {
 
 const wasmPath = process.argv[2] ?? "test/fixtures/stellarsafe_treasury.wasm";
 const client = new StellarSafeClient({ network: "testnet" });
+
+const walletMembers = (process.env.WALLET_MEMBERS ?? "")
+  .split(",")
+  .map((a) => a.trim())
+  .filter(Boolean);
 
 const admin = Keypair.random();
 const approver = Keypair.random();
@@ -39,7 +47,10 @@ const deploy = await client.deployTreasury({
   wasmHash,
   admin: admin.publicKey(),
   name: "Example Treasury",
-  members: [{ address: approver.publicKey(), role: "Approver" }],
+  members: [
+    { address: approver.publicKey(), role: "Approver" },
+    ...walletMembers.map((address) => ({ address, role: "Approver" as const })),
+  ],
   policy: {
     defaultApprovals: 1,
     thresholds: [{ minAmount: parseAmount("100"), approvals: 2 }],
@@ -55,4 +66,6 @@ const { result: treasuryId, hash } = await deploy.signAndSubmit(wallet);
 console.log("treasury:", treasuryId);
 console.log(`https://stellar.expert/explorer/testnet/tx/${hash}`);
 console.log(await client.getTreasury(treasuryId));
+console.log("token (XLM SAC):", xlm);
+console.log("allowed recipient:", vendor.publicKey());
 console.log("admin secret (testnet only):", admin.secret());

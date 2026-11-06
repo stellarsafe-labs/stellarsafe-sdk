@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StellarSafe — wallet example (testnet)</title>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>StellarSafe wallet example <small>testnet</small></h1>
+        <div id="wallet">
+          <span id="wallet-address">Not connected</span>
+          <button id="connect" type="button">Connect wallet</button>
+          <button id="disconnect" type="button" hidden>Disconnect</button>
+        </div>
+      </header>
+
+      <div id="message" role="status" hidden></div>
+
+      <section>
+        <h2>1. Load a treasury</h2>
+        <form id="load-form" class="row">
+          <input id="treasury-id" name="treasury" placeholder="Treasury contract id (C…)" required size="60" />
+          <button type="submit">Load</button>
+        </form>
+        <div id="treasury"></div>
+      </section>
+
+      <section>
+        <h2>2. Propose a payment</h2>
+        <form id="propose-form" class="grid">
+          <label>Token contract <input name="token" placeholder="C…" required /></label>
+          <label>Recipient <input name="recipient" placeholder="G… or C…" required /></label>
+          <label>Amount <input name="amount" placeholder="10.5" required inputmode="decimal" /></label>
+          <label>Department <input name="department" list="departments" placeholder="ops" required /></label>
+          <datalist id="departments"></datalist>
+          <label>Memo <input name="memo" maxlength="256" value="Wallet example payment" /></label>
+          <label>Expires in (hours) <input name="hours" type="number" min="1" value="24" required /></label>
+          <button type="submit">Review proposal</button>
+        </form>
+        <ul id="violations"></ul>
+      </section>
+
+      <section>
+        <h2>3. Approve</h2>
+        <p>Use the <em>Approve</em> button next to a pending proposal above.</p>
+      </section>
+
+      <section>
+        <h2>Advanced: relayed fees</h2>
+        <p>
+          Leave empty to pay fees from the connected wallet. Set a different account to have the
+          connected member sign only the authorization (<code>signAuthEntry</code>) and the fee
+          payer sign the envelope; switch accounts in the wallet when asked.
+        </p>
+        <label>Fee payer <input id="fee-payer" placeholder="G… (optional)" size="60" /></label>
+      </section>
+
+      <dialog id="review">
+        <h2 id="review-title">Review transaction</h2>
+        <dl id="review-details"></dl>
+        <p id="review-hint"></p>
+        <div class="row">
+          <button id="review-sign" type="button">Sign with wallet</button>
+          <button id="review-cancel" type="button">Cancel</button>
+        </div>
+      </dialog>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

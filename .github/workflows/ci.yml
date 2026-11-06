@@ -42,6 +42,26 @@ jobs:
           name: coverage
           path: coverage/
 
+  example-web:
+    name: Build examples/web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            examples/web/package-lock.json
+      # The example links the SDK from the repo root (file:../..), so build it first.
+      - run: npm ci
+      - run: npm run build
+      - run: npm ci
+        working-directory: examples/web
+      - run: npm run build
+        working-directory: examples/web
+
   e2e:
     name: Testnet end-to-end
     runs-on: ubuntu-latest
