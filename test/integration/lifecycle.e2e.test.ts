@@ -169,6 +169,7 @@ describe.skipIf(!enabled)(`StellarSafe lifecycle on ${networkName}`, () => {
       ]),
     );
     expect(snap.pendingProposals).toEqual([]);
+    expect(snap.balances).toEqual([{ token: xlmSac, balance: 50n * XLM }]);
     expect(await safe.getRole(stranger.publicKey())).toBeUndefined();
   });
 
@@ -379,5 +380,10 @@ describe.skipIf(!enabled)(`StellarSafe lifecycle on ${networkName}`, () => {
     const proposals = await safe.listProposals({ start: 1n, limit: 100 });
     expect(proposals.filter((p) => p.status === "Executed")).toHaveLength(3);
     expect(await safe.getPendingProposals()).toEqual([]);
+  });
+
+  it("reports the balance left after the executed payments", async () => {
+    // 50 XLM funded − (2 + 6 + 1) XLM paid out.
+    expect(await safe.getBalances()).toEqual([{ token: xlmSac, balance: 41n * XLM }]);
   });
 });

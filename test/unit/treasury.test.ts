@@ -1,4 +1,4 @@
-import { Keypair, Networks, TransactionBuilder } from "@stellar/stellar-sdk";
+import { Address, Keypair, Networks, TransactionBuilder } from "@stellar/stellar-sdk";
 import { beforeEach, describe, expect, it } from "vitest";
 import { dec, enc, encodeMember, encodeRole } from "../../src/codec.js";
 import {
@@ -26,6 +26,7 @@ import {
 import {
   ADMIN,
   APPROVER,
+  contractId,
   makePolicy,
   makeProposal,
   NOW,
@@ -38,11 +39,16 @@ import {
 const policy = makePolicy();
 const { version: _v, updatedAt: _u, ...policyConfig } = policy;
 const proposal = makeProposal();
+const EURC = contractId(12);
+const XLM_SAC = contractId(13);
+/** Balances served by the fake `balance` handler, per token contract. */
+let balances: Map<string, bigint>;
 
 let rpc: FakeRpc;
 let client: StellarSafeClient;
 
 beforeEach(() => {
+  balances = new Map([[USDC, 50_0000000n]]);
   rpc = fakeRpc({
     handlers: {
       get_config: () =>
@@ -73,6 +79,11 @@ beforeEach(() => {
       add_member: () => VOID,
       remove_member: () => VOID,
       set_policy: () => enc.u32(2),
+      balance: (_args, token) => {
+        const balance = balances.get(token);
+        if (balance === undefined) throw new ContractFailure(6);
+        return enc.i128(balance);
+      },
     },
   });
   client = new StellarSafeClient({ network: "testnet", rpc, retry: { retries: 0 } });
@@ -88,6 +99,7 @@ describe("reads", () => {
     expect(snap.policy).toEqual(policy);
     expect(snap.members).toHaveLength(2);
     expect(snap.pendingProposals).toEqual([proposal]);
+    expect(snap.balances).toEqual([{ token: USDC, balance: 50_0000000n }]);
     expect(snap.ledger).toBe(1000);
   });
 
@@ -171,6 +183,139 @@ describe("reads", () => {
   it("wraps decode failures with field paths", async () => {
     rpc.handlers.get_policy = () => enc.u32(1);
     await expect(treasury().getPolicy()).rejects.toMatchObject({ code: "DECODE_ERROR" });
+  });
+});
+
+describe("getBalances", () => {
+  const multiTokenPolicy = makePolicy({
+    allowedTokens: [USDC, EURC],
+    departmentLimits: [
+      { department: "ops", token: USDC, limit: 1n },
+      { department: "ops", token: XLM_SAC, limit: 1n },
+      { department: "marketing", token: EURC, limit: 1n },
+    ],
+  });
+
+  beforeEach(() => {
+    rpc.handlers.get_policy = () => encodePolicy(multiTokenPolicy);
+    balances.set(EURC, 7n).set(XLM_SAC, 0n);
+  });
+
+  const balanceCalls = () => rpc.calls.filter((c) => c.method === "balance");
+
+  it("reads each distinct policy token once, in policy order", async () => {
+    expect(await treasury().getBalances()).toEqual([
+      { token: USDC, balance: 50_0000000n },
+      { token: EURC, balance: 7n },
+      { token: XLM_SAC, balance: 0n },
+    ]);
+    const calls = balanceCalls();
+    expect(calls.map((c) => c.contractId)).toEqual([USDC, EURC, XLM_SAC]);
+    for (const call of calls) {
+      expect(call.args).toHaveLength(1);
+      expect(Address.fromScVal(call.args[0] as never).toString()).toBe(TREASURY_ID);
+    }
+    // Read-only: no account is loaded.
+    expect(rpc.simAuthModes.every((m) => m === undefined)).toBe(true);
+  });
+
+  it("reads the tokens in parallel", async () => {
+    let inFlight = 0;
+    let maxInFlight = 0;
+    const simulate = rpc.simulateTransaction.bind(rpc);
+    rpc.simulateTransaction = async (...a) => {
+      inFlight++;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await new Promise((r) => setTimeout(r, 5));
+      try {
+        return await simulate(...a);
+      } finally {
+        inFlight--;
+      }
+    };
+    await treasury().getBalances();
+    expect(maxInFlight).toBe(3);
+  });
+
+  it("returns an empty list when the policy names no tokens", async () => {
+    rpc.handlers.get_policy = () =>
+      encodePolicy(makePolicy({ allowedTokens: [], departmentLimits: [] }));
+    expect(await treasury().getBalances()).toEqual([]);
+    expect(balanceCalls()).toHaveLength(0);
+  });
+
+  it("reads only the given tokens, de-duplicated, without reading the policy", async () => {
+    expect(await treasury().getBalances({ tokens: [EURC, EURC, USDC] })).toEqual([
+      { token: EURC, balance: 7n },
+      { token: USDC, balance: 50_0000000n },
+    ]);
+    expect(rpc.calls.map((c) => c.method)).toEqual(["balance", "balance"]);
+    await expect(treasury().getBalances({ tokens: [USDC, "nope"] })).rejects.toThrow(/tokens\[1\]/);
+  });
+
+  it("reports a failing token without failing the others", async () => {
+    balances.delete(EURC); // the fake token traps with Error(Contract, #6)
+    rpc.handlers.balance = ((handler) => (args, token) => {
+      if (token === XLM_SAC) return enc.u32(1); // not an i128
+      return handler(args, token);
+    })(rpc.handlers.balance as NonNullable<typeof rpc.handlers.balance>);
+
+    const [usdc, eurc, xlm] = await treasury().getBalances();
+    expect(usdc).toEqual({ token: USDC, balance: 50_0000000n });
+
+    expect(eurc?.token).toBe(EURC);
+    expect(eurc?.balance).toBeUndefined();
+    // A token's error code is not a treasury ContractError.
+    expect(eurc?.error).toBeInstanceOf(SimulationError);
+    expect(eurc?.error).not.toBeInstanceOf(ContractError);
+    expect(eurc?.error?.message).toMatch(/Error\(Contract, #6\)/);
+
+    expect(xlm?.error).toMatchObject({ code: "DECODE_ERROR" });
+  });
+
+  it("still fails as a whole when the policy cannot be read", async () => {
+    rpc.handlers.get_policy = () => {
+      throw new ContractFailure(1);
+    };
+    await expect(treasury().getBalances()).rejects.toBeInstanceOf(ContractError);
+  });
+
+  it("uses the pipeline's retries", async () => {
+    const retrying = new StellarSafeClient({
+      network: "testnet",
+      rpc,
+      retry: { retries: 2, baseDelayMs: 1, maxDelayMs: 1 },
+    });
+    const simulate = rpc.simulateTransaction.bind(rpc);
+    let failures = 1;
+    rpc.simulateTransaction = async (...a) => {
+      if (failures-- > 0) throw Object.assign(new Error("ECONNRESET"), { code: "ECONNRESET" });
+      return simulate(...a);
+    };
+    expect(await retrying.treasury(TREASURY_ID).getBalances({ tokens: [USDC] })).toEqual([
+      { token: USDC, balance: 50_0000000n },
+    ]);
+  });
+
+  it("rejects as a whole when aborted", async () => {
+    const ac = new AbortController();
+    ac.abort();
+    await expect(
+      treasury().getBalances({ tokens: [USDC], signal: ac.signal }),
+    ).rejects.toMatchObject({ code: "ABORTED" });
+  });
+
+  it("is included in the snapshot, with failures reported per token", async () => {
+    balances.delete(XLM_SAC);
+    rpc.simLedgers = [1000, 1000, 1000, 1000, 1002];
+    const snap = await treasury().getSnapshot();
+    expect(snap.balances.map((b) => [b.token, b.balance])).toEqual([
+      [USDC, 50_0000000n],
+      [EURC, 7n],
+      [XLM_SAC, undefined],
+    ]);
+    expect(snap.balances[2]?.error).toBeInstanceOf(SimulationError);
+    expect(snap.ledger).toBe(1002);
   });
 });
 

@@ -15,7 +15,7 @@ import {
   encodePolicyConfig,
   encodeRole,
 } from "./codec.js";
-import { ValidationError } from "./errors.js";
+import { ContractError, SimulationError, StellarSafeError, ValidationError } from "./errors.js";
 import { findDepartmentLimit, validatePolicyConfig } from "./policy.js";
 import type { TransactionSigner } from "./signer.js";
 import type {
@@ -35,6 +35,7 @@ import type {
   Proposal,
   Role,
   SpendingStatus,
+  TokenBalance,
   TreasuryConfig,
   TreasurySnapshot,
 } from "./types.js";
@@ -58,6 +59,15 @@ export type WriteOptions = Omit<PrepareOptions, "source"> & { readonly source?: 
 /** Options accepted by every read method. */
 export interface ReadOptions extends ReadConsistency {
   readonly signal?: AbortSignal;
+}
+
+/** Options for {@link TreasuryClient.getBalances}. */
+export interface BalanceOptions extends ReadOptions {
+  /**
+   * Token contracts to read instead of the ones named in the policy.
+   * Duplicates are read once.
+   */
+  readonly tokens?: readonly Address[];
 }
 
 /** A proposal id as `bigint`, or a safe-integer `number`/decimal `string`. */
@@ -182,15 +192,55 @@ export class TreasuryClient {
   }
 
   /**
-   * Config, policy, members and pending proposals in one call.
+   * Balances the treasury holds of each token named in its policy: every
+   * distinct token in `allowedTokens` and `departmentLimits`, in that order.
    *
-   * The four reads run in parallel and may observe consecutive ledgers;
-   * `ledger` is the newest one seen.
+   * Each balance is read by simulating `balance(treasury)` on the token
+   * contract (any Soroban token, e.g. a Stellar Asset Contract). The calls run
+   * in parallel and need no account or fee. A token whose call fails is
+   * returned with an `error` instead of a `balance`; the read as a whole only
+   * fails on invalid input, a failure reading the policy, or an abort.
+   *
+   * @example
+   * ```ts
+   * for (const b of await safe.getBalances()) {
+   *   if (b.error) console.warn(b.token, b.error.message);
+   *   else console.log(b.token, formatAmount(b.balance, 7));
+   * }
+   * await safe.getBalances({ tokens: [USDC] }); // specific tokens only
+   * ```
+   */
+  async getBalances(opts: BalanceOptions = {}): Promise<TokenBalance[]> {
+    const { tokens, ...readOpts } = opts;
+    if (tokens) {
+      tokens.forEach((t, i) => {
+        assertAddress(t, `tokens[${i}]`);
+      });
+    }
+    const list = tokens ?? policyTokens(await this.getPolicy(readOpts));
+    const results = await this.readBalances([...new Set(list)], readOpts);
+    return results.map((r) => r.balance);
+  }
+
+  /**
+   * Config, policy, members, pending proposals and token balances in one call.
+   *
+   * Reads run in parallel (balances start once the policy is known) and may
+   * observe consecutive ledgers; `ledger` is the newest one seen.
    */
   async getSnapshot(opts?: ReadOptions): Promise<TreasurySnapshot> {
-    const [config, policy, members, pending] = await Promise.all([
+    const policyAndBalances = this.readWithLedger(
+      "get_policy",
+      [],
+      (v) => decodePolicy(v),
+      opts,
+    ).then(async (policy) => ({
+      policy,
+      balances: await this.readBalances(policyTokens(policy.result), opts),
+    }));
+    const [config, { policy, balances }, members, pending] = await Promise.all([
       this.readWithLedger("get_config", [], (v) => decodeTreasuryConfig(v), opts),
-      this.readWithLedger("get_policy", [], (v) => decodePolicy(v), opts),
+      policyAndBalances,
       this.readWithLedger("get_members", [], (v) => dec.vec(v, "members", decodeMember), opts),
       this.readWithLedger(
         "get_pending_proposals",
@@ -205,11 +255,13 @@ export class TreasuryClient {
       policy: policy.result,
       members: members.result,
       pendingProposals: pending.result,
+      balances: balances.map((b) => b.balance),
       ledger: Math.max(
         config.latestLedger,
         policy.latestLedger,
         members.latestLedger,
         pending.latestLedger,
+        ...balances.map((b) => b.latestLedger),
       ),
     };
   }
@@ -403,6 +455,32 @@ export class TreasuryClient {
     return this.pipeline.read(this.contractId, method, args, decode, opts);
   }
 
+  /** Simulate `balance(treasury)` on each token, isolating per-token failures. */
+  private readBalances(
+    tokens: readonly Address[],
+    opts: ReadOptions | undefined,
+  ): Promise<{ balance: TokenBalance; latestLedger: number }[]> {
+    const id = enc.address(this.contractId);
+    return Promise.all(
+      tokens.map(async (token) => {
+        try {
+          const { result, latestLedger } = await this.pipeline.read(
+            token,
+            "balance",
+            [id],
+            (v) => dec.i128(v, "balance"),
+            opts,
+          );
+          return { balance: { token, balance: result }, latestLedger };
+        } catch (err) {
+          // An abort cancels the whole read rather than being reported per token.
+          if (opts?.signal?.aborted || !(err instanceof StellarSafeError)) throw err;
+          return { balance: { token, error: tokenError(err) }, latestLedger: 0 };
+        }
+      }),
+    );
+  }
+
   private write<T>(
     method: string,
     args: xdr.ScVal[],
@@ -503,6 +581,22 @@ export class ConnectedTreasury {
   private async run<T>(prepared: Promise<PreparedTransaction<T>>): Promise<TransactionResult<T>> {
     return (await prepared).signAndSubmit(this.signer, this.submitOptions);
   }
+}
+
+/**
+ * `ContractError` names describe the treasury's error codes, not a token's, so
+ * a token contract's error is reported as a plain simulation failure.
+ */
+function tokenError(err: StellarSafeError): StellarSafeError {
+  if (!(err instanceof ContractError)) return err;
+  return new SimulationError(
+    typeof err.cause === "string" ? err.cause : `Error(Contract, #${err.contractCode})`,
+  );
+}
+
+/** Distinct tokens named in a policy: `allowedTokens`, then `departmentLimits`. */
+function policyTokens(policy: Policy): Address[] {
+  return [...new Set([...policy.allowedTokens, ...policy.departmentLimits.map((l) => l.token)])];
 }
 
 export function assertRole(value: unknown, field: string): asserts value is Role {

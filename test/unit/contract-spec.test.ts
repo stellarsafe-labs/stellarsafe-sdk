@@ -197,6 +197,7 @@ describe("contract interface conformance", () => {
         get_spent: enc.struct({ period_index: enc.u64(0n), spent: enc.i128(0n) }),
         propose_payment: enc.u64(1n),
         set_policy: enc.u32(2),
+        balance: enc.i128(0n),
         __deploy: enc.address(TREASURY_ID),
       };
       rpc.handlers = new Proxy(
@@ -241,7 +242,13 @@ describe("contract interface conformance", () => {
       expect(keypairSigner(ADMIN).address).toBe(admin);
 
       const called = new Set<string>();
-      for (const { method, args } of rpc.calls) {
+      for (const { method, args, contractId } of rpc.calls) {
+        if (contractId && contractId !== TREASURY_ID) {
+          // Token contracts: only the standard `balance(id: Address) -> i128` is used.
+          expect(method).toBe("balance");
+          expect(args.map((a) => a.type)).toEqual(["scvAddress"]);
+          continue;
+        }
         const name = method === "__deploy" ? "__constructor" : method;
         called.add(name);
         const fn = spec.getFunc(name);

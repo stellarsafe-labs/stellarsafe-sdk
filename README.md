@@ -102,10 +102,36 @@ await safe.getProposal(12n); // one proposal
 await safe.getPendingProposals(); // all with status Pending
 await safe.listProposals({ start: 1n, limit: 50 });
 await safe.getSpending("ops", USDC); // { spent, limit, remaining, periodIndex }
-await safe.getSnapshot(); // config + policy + members + pending, in parallel
+await safe.getBalances(); // [{ token, balance }] for each token in the policy
+await safe.getSnapshot(); // config + policy + members + pending + balances, in parallel
 
 await safe.assertCompatible(); // throws if the contract's interface version differs
 ```
+
+### Token balances
+
+`getBalances()` reads what the treasury holds of every distinct token named
+in its policy (`allowedTokens`, then `departmentLimits`). Each token contract
+— any Soroban token, such as a Stellar Asset Contract — is asked for
+`balance(treasury)` in parallel. Amounts are `bigint` in the token's smallest
+unit.
+
+```ts
+const balances = await safe.getBalances();
+// [{ token: "CDLZ…", balance: 50_0000000n }]
+
+await safe.getBalances({ tokens: [USDC] }); // read specific tokens instead
+
+for (const b of balances) {
+  // A failed token (e.g. archived or missing contract) carries an error instead.
+  if (b.error) console.warn(b.token, b.error.message);
+  else console.log(b.token, formatAmount(b.balance, 7));
+}
+```
+
+A token whose call fails is returned with an `error` (a `StellarSafeError`)
+instead of a `balance`, so one broken token never hides the others. The same
+list is in `snapshot.balances` from `getSnapshot()` / `client.getTreasury()`.
 
 ## Writing: prepare → sign → submit
 

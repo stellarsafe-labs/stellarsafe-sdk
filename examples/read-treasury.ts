@@ -1,5 +1,5 @@
 /**
- * Print a treasury's policy, members, pending proposals and spending.
+ * Print a treasury's policy, members, balances, pending proposals and spending.
  *
  *   npm run build
  *   STELLARSAFE_TREASURY_ID=C… node examples/read-treasury.ts
@@ -17,14 +17,19 @@ const client = new StellarSafeClient({
 const safe = client.treasury(treasuryId);
 await safe.assertCompatible();
 
-const [{ config, policy, members, pendingProposals }, { closeTime: now }] = await Promise.all([
-  safe.getSnapshot(),
-  client.getLedgerTime(),
-]);
+const [{ config, policy, members, balances, pendingProposals }, { closeTime: now }] =
+  await Promise.all([safe.getSnapshot(), client.getLedgerTime()]);
 
 console.log(`${config.name} — policy v${policy.version}`);
 console.log(`Members:`);
 for (const m of members) console.log(`  ${m.role.padEnd(8)} ${m.address}`);
+
+console.log(`\nBalances:`);
+for (const b of balances) {
+  console.log(
+    `  ${b.token}: ${b.error ? `unavailable (${b.error.message})` : formatAmount(b.balance)}`,
+  );
+}
 
 const period = periodBounds(policy.period, now);
 console.log(
